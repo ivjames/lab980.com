@@ -1,0 +1,265 @@
+    <!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jim Orr -- Software Engineer</title>
+<meta name="description" content="Jim Orr -- full-stack software engineer. 15+ years shipping production web applications.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#fbfbf9;
+    --surface:#ffffff;
+    --ink:#16181d;
+    --muted:#5a5f66;
+    --faint:#6c7178;
+    --line:#e6e6e0;
+    --accent:#0e7c66;
+    --accent-ink:#0a5e4d;
+    --sans:"Inter",system-ui,-apple-system,sans-serif;
+    --display:"Space Grotesk",var(--sans);
+    --mono:"JetBrains Mono","SF Mono",ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:var(--bg);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  /* top bar */
+  .topbar{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px;
+    background:rgba(251,251,249,.85);
+    backdrop-filter:saturate(1.2) blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .mark{
+    font-family:var(--mono);font-size:13px;font-weight:500;letter-spacing:.14em;
+    color:var(--ink);
+  }
+  .mark .dot{color:var(--accent)}
+  .topbar a.dl{
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.02em;
+    color:var(--accent-ink);text-decoration:none;
+    border:1px solid var(--accent);border-radius:2px;
+    padding:7px 13px;
+  }
+  .topbar a.dl:hover{background:var(--accent);color:#fff}
+  .topbar a.dl:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  .page{max-width:720px;margin:0 auto;padding:64px 28px 80px}
+
+  /* hero */
+  .eyebrow{
+    font-family:var(--mono);font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent-ink);margin-bottom:18px;
+  }
+  h1{
+    font-family:var(--display);font-weight:700;
+    font-size:clamp(42px,8vw,68px);line-height:1.02;letter-spacing:-.02em;
+    margin-bottom:14px;
+  }
+  .cursor{
+    display:inline-block;width:.5ch;height:.78em;background:var(--accent);
+    margin-left:.08em;vertical-align:baseline;transform:translateY(.06em);
+    animation:blink 1.15s steps(1) infinite;
+  }
+  @keyframes blink{50%{opacity:0}}
+  .role{
+    font-family:var(--display);font-weight:500;font-size:clamp(18px,3vw,22px);
+    color:var(--muted);margin-bottom:22px;
+  }
+  .contact{
+    font-family:var(--mono);font-size:13.5px;color:var(--muted);
+    display:flex;flex-wrap:wrap;gap:6px 16px;margin-bottom:30px;
+  }
+  .contact a{color:var(--muted);text-decoration:none;border-bottom:1px solid var(--line)}
+  .contact a:hover{color:var(--accent-ink);border-color:var(--accent)}
+  .cta{
+    display:inline-block;font-family:var(--sans);font-weight:600;font-size:15px;
+    color:#fff;background:var(--accent);text-decoration:none;
+    padding:12px 22px;border-radius:3px;
+  }
+  .cta:hover{background:var(--accent-ink)}
+  .cta:focus-visible{outline:2px solid var(--accent-ink);outline-offset:3px}
+
+  .summary{
+    font-size:17px;line-height:1.6;color:#2c2f35;
+    margin:40px 0 8px;max-width:62ch;
+  }
+
+  /* sections */
+  section{margin-top:46px}
+  h2{
+    font-family:var(--mono);font-size:12.5px;font-weight:500;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--faint);
+    padding-bottom:10px;margin-bottom:22px;border-bottom:1px solid var(--line);
+  }
+
+  /* skills */
+  .skill{display:flex;gap:18px;padding:7px 0;align-items:baseline}
+  .skill + .skill{border-top:1px solid var(--line)}
+  .skill dt{
+    flex:0 0 120px;font-family:var(--mono);font-size:12px;letter-spacing:.04em;
+    text-transform:uppercase;color:var(--accent-ink);
+  }
+  .skill dd{font-size:15px;color:#2c2f35}
+
+  /* experience */
+  .job{margin-bottom:26px}
+  .job:last-child{margin-bottom:0}
+  .job-head{display:flex;justify-content:space-between;align-items:baseline;gap:6px 16px;flex-wrap:wrap}
+  .job-title{font-family:var(--display);font-weight:600;font-size:17px;letter-spacing:-.01em}
+  .job-co{font-weight:500;color:var(--muted);font-size:15px}
+  .job-date{font-family:var(--mono);font-size:12.5px;color:var(--faint);white-space:nowrap}
+  .job ul{list-style:none;margin-top:9px}
+  .job li{
+    position:relative;padding-left:18px;margin-bottom:7px;
+    font-size:14.5px;line-height:1.55;color:#3a3e44;
+  }
+  .job li::before{
+    content:"";position:absolute;left:2px;top:.62em;
+    width:5px;height:5px;background:var(--accent);border-radius:50%;
+  }
+  .meta{font-size:14px;color:var(--muted);line-height:1.6}
+  .meta b{color:var(--ink);font-weight:600}
+  .lead-note{font-size:14.5px;color:var(--muted);margin-bottom:12px}
+
+  footer{
+    margin-top:64px;padding-top:22px;border-top:1px solid var(--line);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    font-family:var(--mono);font-size:12px;letter-spacing:.06em;color:var(--faint);
+  }
+
+  @media (max-width:520px){
+    .skill{flex-direction:column;gap:2px}
+    .skill dt{flex-basis:auto}
+    .topbar{padding:12px 18px}
+    .page{padding:44px 20px 64px}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .cursor{animation:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="mark">LAB980<span class="dot">.</span>COM</span>
+  <a class="dl" href="Jim_Orr_Resume_2026.pdf" download="Jim_Orr_Resume_2026.pdf">Download résumé ↓</a>
+</div>
+
+<div class="page">
+
+  <header>
+    <p class="eyebrow">Full-Stack Web Development</p>
+    <h1>Jim Orr<span class="cursor" aria-hidden="true"></span></h1>
+    <p class="role">Software Engineer</p>
+    <div class="contact">
+      <a href="mailto:ivjames@gmail.com">ivjames@gmail.com</a>
+      <a href="tel:+19098512915">909-851-2915</a>
+      <span>Remote / California</span>
+    </div>
+    <a class="cta" href="Jim_Orr_Resume_2026.pdf" download="Jim_Orr_Resume_2026.pdf">Download résumé (PDF)</a>
+
+    <p class="summary">Full-stack web developer with 15+ years building and shipping production applications across e-commerce, logistics, and internal tooling. Strongest in PHP/MySQL backend work with solid JavaScript and Python across the stack. Recent focus on modern Python and Node.js development, LLM API integration, and AI-assisted development workflows. Comfortable owning features end-to-end, debugging production issues, and writing maintainable code in team environments.</p>
+  </header>
+
+  <section aria-label="Technical skills">
+    <h2>Technical Skills</h2>
+    <dl>
+      <div class="skill"><dt>Languages</dt><dd>JavaScript, Node.js, Python, PHP</dd></div>
+      <div class="skill"><dt>Databases</dt><dd>MySQL, PostgreSQL</dd></div>
+      <div class="skill"><dt>Frontend</dt><dd>HTML5, CSS3, responsive layouts, cross-browser debugging, jQuery, Bootstrap</dd></div>
+      <div class="skill"><dt>APIs / Web</dt><dd>REST APIs, WebSockets, Postman</dd></div>
+      <div class="skill"><dt>Testing / QA</dt><dd>Selenium, WebDriver, TestProject, test automation, Pega</dd></div>
+      <div class="skill"><dt>Tools</dt><dd>Git, Agile, AI-assisted development, LLM API integration</dd></div>
+    </dl>
+  </section>
+
+  <section aria-label="Experience">
+    <h2>Experience</h2>
+
+    <div class="job">
+      <div class="job-head"><span class="job-title">QA Engineer / SDET <span class="job-co">· Hoverstate 2.0, Woodland Hills, CA</span></span><span class="job-date">Sep 2020 – Apr 2022</span></div>
+      <ul>
+        <li>Built end-to-end automated test suite for a multi-step enterprise reporting application, covering complex form logic, file uploads, and JavaScript-based signature fields.</li>
+        <li>Designed test architecture to double as a structured data-entry harness, reducing manual QA overhead across multiple report types.</li>
+        <li>Worked in developer and QA capacity on Pega-based workflows; evaluated and prototyped automation tooling to improve testing efficiency.</li>
+        <li>Collaborated with dev teams on issue triage, regression validation, and release stabilization across multiple client platforms.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-head"><span class="job-title">Web Developer <span class="job-co">· ACPro, Fontana, CA</span></span><span class="job-date">Apr 2019 – Mar 2020</span></div>
+      <ul>
+        <li>Maintained and optimized legacy e-commerce and proprietary business platforms, reducing technical debt and improving page performance.</li>
+        <li>Contributed to system re-architecture that introduced API integrations and modernized core technology dependencies.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-head"><span class="job-title">Web Developer <span class="job-co">· Pacific Logistics Corp, Pico Rivera, CA</span></span><span class="job-date">Jan 2014 – Apr 2019</span></div>
+      <ul>
+        <li>Built and maintained backend systems for warehouse management and operational logistics workflows serving a distributed operations team.</li>
+        <li>Modernized legacy intranet infrastructure, replacing aging PHP/MySQL systems to improve reliability and staff productivity.</li>
+        <li>Sole developer responsible for all internal web applications over a five-year period; handled requirements gathering, development, and production support.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-head"><span class="job-title">Web Developer <span class="job-co">· 4over Inc., Glendale, CA</span></span><span class="job-date">Apr 2011 – Nov 2013</span></div>
+      <ul>
+        <li>Maintained and extended legacy PHP web store and internal frameworks supporting high-volume print production workflows.</li>
+        <li>Implemented UI improvements and internal tooling adopted across production operations.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-head"><span class="job-title">Web Developer <span class="job-co">· Warp2Biz, Pasadena, CA</span></span><span class="job-date">Jun 2010 – Mar 2011</span></div>
+      <ul>
+        <li>Built internal project management and communication tools; customized CMS and web workflows to reduce operational overhead.</li>
+      </ul>
+    </div>
+
+    <div class="job">
+      <div class="job-head"><span class="job-title">Lead Web Developer <span class="job-co">· The Dohring Company / MarketSurveys.com, Glendale, CA</span></span><span class="job-date">Jun 2006 – Feb 2010</span></div>
+      <ul>
+        <li>Led development of web-based survey production and sales operations platforms used across core business processes.</li>
+        <li>Delivered custom web applications on tight timelines; managed full development lifecycle as the lead developer.</li>
+      </ul>
+    </div>
+
+    <p class="meta" style="margin-top:18px"><b>Earlier:</b> Owner/Freelance Developer, OrrWeb.net (2002–2006) · Senior Programmer, Visual Perspectives Internet (2000–2002). Freelance web development for SMBs; backend development for commercial e-commerce platforms.</p>
+  </section>
+
+  <section aria-label="Independent development">
+    <h2>Independent Development · 2022–Present</h2>
+    <p class="lead-note">During a health-related career pause, continued active technical development:</p>
+    <div class="job">
+      <ul>
+        <li>Built Python, Node.js, and JavaScript prototypes focused on automation and AI-assisted workflows.</li>
+        <li>Studied LLM API integration patterns and retrieval-augmented application design.</li>
+        <li>Expanded working familiarity with modern tooling including current JavaScript ecosystem and Python scripting.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <span>LAB980.COM</span>
+    <span>JIM ORR · © 2026</span>
+  </footer>
+
+</div>
+</body>
+</html>
