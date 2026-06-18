@@ -44,49 +44,8 @@
       <span class="section-label">Work</span>
       <h2 class="section-title">Things I Made</h2>
     </div>
-
     <div class="projects-grid">
-
-      <div class="project-card">
-        <span class="project-tag">Web · Python · Self-Hosted</span>
-        <h3 class="project-name">Photo Studio</h3>
-        <p class="project-desc">A self-hosted web app for digitizing physical photo collections. Drag crop regions over flatbed scans, straighten and deskew individual photos, tag and organize them into folders, then export the whole thing as a zip. Built for the kind of shoebox-full-of-prints problem that never quite got solved. <span style="color: var(--accent);">Demo mode coming soon.</span></p>
-        <span class="project-status">
-          <span class="project-status-dot active"></span>
-          Live (somehow)
-        </span>
-      </div>
-
-      <div class="project-card">
-        <span class="project-tag">Web · Node · SQLite</span>
-        <h3 class="project-name">MarketingBuzzworthy</h3>
-        <p class="project-desc">A demo site built for a marketing company that never went anywhere. Multipage frontend, Node backend, contact form that actually stores submissions in a SQLite mailbox with read/unread and delete. Technically solid. Commercially deceased.</p>
-        <span class="project-status">
-          <span class="project-status-dot"></span>
-          Archived (it's fine)
-        </span>
-      </div>
-
-      <div class="project-card">
-        <span class="project-tag">Web · Vite · Static</span>
-        <h3 class="project-name">Lucky Felt Casino</h3>
-        <p class="project-desc">A browser casino with no real stakes. Texas Hold'em, Roulette, Craps, Sic Bo, and three slot machines. Passwordless accounts via localStorage -- no backend, no server, no excuses. Pure frontend degeneracy.</p>
-        <span class="project-status">
-          <span class="project-status-dot active"></span>
-          Live (somehow)
-        </span>
-      </div>
-
-      <div class="project-card">
-        <span class="project-tag">Design · System</span>
-        <h3 class="project-name">Project Delta</h3>
-        <p class="project-desc">Started as a weekend thing. Three months later, here we are. Placeholder until I figure out what to call it.</p>
-        <span class="project-status">
-          <span class="project-status-dot wip"></span>
-          In Progress
-        </span>
-      </div>
-
+      <!-- Cards rendered by main.js -->
     </div>
   </section>
 
@@ -95,7 +54,6 @@
       <span class="section-label">About</span>
       <h2 class="section-title">The Lab</h2>
     </div>
-
     <div class="about-grid">
       <div class="about-text">
         <p>
@@ -106,7 +64,6 @@
           The site has been "coming soon" for longer than is strictly defensible. The projects, however, are real. Full professional history (the sanitized version) on the <a href="https://resume.lab980.com" style="color: var(--accent); text-decoration: none;">resume</a>.
         </p>
       </div>
-
       <div class="about-stats">
         <div class="stat-row">
           <div class="stat-num">4+</div>
@@ -133,6 +90,29 @@
     </nav>
     <p class="footer-copy">© 2026 lab980 -- Still under construction. Probably always will be.</p>
   </footer>
+
+  <!-- ─── MODAL ─────────────────────────────────────────── -->
+  <div id="project-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-backdrop"></div>
+    <div class="modal-panel">
+      <div class="modal-header">
+        <div class="modal-meta">
+          <span class="modal-tag"></span>
+          <h2 class="modal-title" id="modal-title"></h2>
+          <span class="modal-status">
+            <span class="modal-status-dot project-status-dot"></span>
+            <span class="modal-status-text"></span>
+          </span>
+        </div>
+        <button class="modal-close">Close ✕</button>
+      </div>
+      <div class="modal-detail"></div>
+      <div class="modal-footer">
+        <div class="modal-stack"></div>
+        <div class="modal-links"></div>
+      </div>
+    </div>
+  </div>
 
   <script src="main.js"></script>
 </body>
