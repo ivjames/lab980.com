@@ -670,6 +670,9 @@ footer {
  .hero-grid { grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 8vh, 64px); }
  .hero { align-items: flex-start; }
  .hero-index { max-width: none; margin-left: 0; }
+ /* pack number + name + dot together on the left instead of stretching the
+    dot to the far edge of the full-width row */
+ .hero-index-item { grid-template-columns: auto auto auto; justify-content: start; }
  .scroll-indicator { display: none; }
 }
 
