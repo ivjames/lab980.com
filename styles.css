@@ -44,9 +44,10 @@ button:focus-visible,
  align-items: center;
  padding: clamp(84px, 11vh, 116px) clamp(24px, 5vw, 80px) clamp(48px, 7vh, 76px);
  overflow: hidden;
- /* dark halo so hero text (incl. the index) stays legible over the stars:
-    a tight edge for separation plus a wider blur for lift */
- text-shadow: 0 2px 5px rgba(0, 0, 0, 0.95), 0 4px 22px rgba(0, 0, 0, 0.8);
+ /* wide dark halo so hero text (incl. the index) stays legible over the
+    stars -- it dims a ring of stars around each glyph. Invisible on bare
+    black by nature; it only shows where the field is behind the text. */
+ text-shadow: 0 0 10px rgba(0, 0, 0, 1), 0 0 22px rgba(0, 0, 0, 0.95), 0 0 38px rgba(0, 0, 0, 0.8);
 }
 
 .cta-primary { text-shadow: none; }
