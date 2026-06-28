@@ -96,7 +96,7 @@ button:focus-visible,
  z-index: 5;
  width: 100%;
  display: grid;
- grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.55fr);
+ grid-template-columns: minmax(0, 1fr) max-content;
  gap: clamp(40px, 6vw, 96px);
  align-items: start;
 }
@@ -189,8 +189,6 @@ button:focus-visible,
  border-top: 1px solid var(--border);
  padding-top: 16px;
  min-width: 0;
- max-width: 420px;
- margin-left: auto;
 }
 
 .hero-index-head {
@@ -210,7 +208,8 @@ button:focus-visible,
 .hero-index-item {
  width: 100%;
  display: grid;
- grid-template-columns: auto minmax(0, 1fr) auto;
+ grid-template-columns: auto auto auto;
+ justify-content: start;
  align-items: center;
  gap: 16px;
  background: none;
@@ -667,16 +666,13 @@ footer {
 
 /* ─── RESPONSIVE ─────────────────────────────────────────── */
 @media (max-width: 1024px) {
- .hero-grid { grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 8vh, 64px); }
- .hero { align-items: flex-start; }
- .hero-index { max-width: none; margin-left: 0; }
- /* pack number + name + dot together on the left instead of stretching the
-    dot to the far edge of the full-width row */
- .hero-index-item { grid-template-columns: auto auto auto; justify-content: start; }
  .scroll-indicator { display: none; }
 }
 
-@media (max-width: 600px) {
+/* phones only: stack the hero, index drops full-width below it */
+@media (max-width: 680px) {
+ .hero-grid { grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 8vh, 64px); }
+ .hero { align-items: flex-start; }
  .nav-resume { display: none; }
 }
 
