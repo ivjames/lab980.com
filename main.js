@@ -65,11 +65,11 @@ const projects = [
     id: 'qa-ksink',
     tag: 'Web · Python · Test Automation',
     name: 'QA KSink',
-    desc: "Two halves of one joke: a 'kitchen sink' website built to be deliberately, thoroughly broken, and a bot whose whole job is finding everything wrong with it. The dashboard streams the live browser as it clicks through the wreckage and files a report.",
+    desc: "Two repos that only make sense together: a 'kitchen sink' demo app stuffed with every form, flow, and edge case worth testing, and a Playwright bot whose whole job is clicking through it. The dashboard streams the live browser as it works and files an HTML report.",
     status: 'active',
     statusText: 'Live (somehow)',
-    detail: `QA KSink is two halves of the same joke: a "kitchen sink" website built to be deliberately, comprehensively broken, and a bot whose entire purpose is finding everything wrong with it.\n\nThe dashboard kicks off an automated browser run against the target, streams the live browser feed so you can watch it work through forms, dead links, and bad states in real time, then generates a report of what it caught.\n\nIt started as a way to practice test-automation tooling without needing a real app to break -- so the broken app became part of the project. Two birds.\n\nBackend is Python driving a headless browser, fronted by a small API (/api/run, /api/status, /api/log) feeding the live dashboard.`,
-    stack: ['Python', 'Flask', 'Headless Browser', 'WebSockets', 'HTML/CSS/JS'],
+    detail: `QA KSink is two repos that only make sense together: a "kitchen sink" web app that exists purely to be the system under test, and a bot that exercises every scenario in it.\n\nThe target app is a React + Vite frontend over a FastAPI and SQLite backend -- forms, flows, auth, edge cases, and a documented scenario matrix of things that should (and pointedly should not) work. The bot drives it with Playwright under pytest, and instead of running headless it runs visible on purpose: the dashboard streams the live browser feed so you can actually watch it click through everything in real time, then spits out an HTML report of what passed and what didn't.\n\nThe dashboard itself is a small FastAPI service (/api/run, /api/status, /api/log) wrapped around the test run. The whole thing started as an excuse to practice test-automation tooling without a real app to break -- so building the breakable app became half the project.`,
+    stack: ['Python', 'Playwright', 'Pytest', 'FastAPI', 'React'],
     links: [
       { label: 'Bot Dashboard', url: 'https://qa-bot.lab980.com' },
       { label: 'Target Site', url: 'https://qa-demo.lab980.com' }
