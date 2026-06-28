@@ -5,11 +5,33 @@ build step, no `node_modules`. It's served by **nginx** on a **DigitalOcean
 droplet**, with **certbot** handling SSL. Each lab980 subdomain has its own
 nginx server block; this doc covers the apex `lab980.com` only.
 
-> Fill in the two placeholders below for your setup:
-> - `DROPLET` — the SSH host (e.g. `user@lab980.com` or an IP)
-> - `WEBROOT` — the directory nginx serves this site from (e.g. `/var/www/lab980.com`)
+The web root is `/var/www/lab980`.
 
-## Method 1 — git pull (preferred)
+## Method 0 — update.sh (just use this)
+
+Once the web root is a git clone, deploying is one command on the droplet:
+
+```bash
+/var/www/lab980/update.sh
+```
+
+It syncs the web root to `origin/main` (`git fetch` + `git reset --hard`,
+discarding any local drift), prints what changed, then validates and reloads
+nginx. First time only, if the web root isn't a clone yet, the script prints
+the one-line setup command; or run it directly:
+
+```bash
+cd /var/www && mv lab980 lab980.bak \
+  && git clone https://github.com/ivjames/lab980.com.git lab980
+```
+
+`lab980.com` is public, so the HTTPS clone/pull needs no deploy key.
+
+> Placeholders used below:
+> - `DROPLET` — the SSH host (e.g. `user@lab980.com` or an IP)
+> - `WEBROOT` — `/var/www/lab980`
+
+## Method 1 — git pull (manual)
 
 Once the droplet has a deploy key for this repo, deploying is just merging to
 `main` and pulling on the server:
