@@ -12,6 +12,17 @@ const projects = [
     links: [{ label: 'Live Site', url: 'https://photos.lab980.com' }]
   },
   {
+    id: 'capcrop',
+    tag: 'SaaS · Python · AI',
+    name: 'CapCrop',
+    desc: "Photo Studio, except it grew up and got a business model. That one was the MVP; this is the real product -- same shoebox-of-prints problem (batch-scan, auto-crop, straighten, restore, tag), now on its own domain. \"Rescue every photo from the scanner bed.\" In private beta as of 2026, which is conveniently now.",
+    status: 'wip',
+    statusText: 'Private Beta -- 2026',
+    detail: `CapCrop is what happens when Photo Studio grows up. That one was the MVP -- enough to prove the shoebox-of-prints problem was worth solving. CapCrop is the same idea rebuilt as a real product, on the same Python foundation, with its own domain and an actual tagline: "rescue every photo from the scanner bed."\n\nDrop in a flatbed scan with several photos on it and CapCrop pulls each one out by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film. AI handles captions and tag suggestions, but only when you ask it to, and you can bring your own API key.\n\nEverything exports as organized, fully-backed-up ZIPs, sorted into folders. Your photos are never used to train anything, and you can export or delete all of it whenever you want.\n\nPrivate beta in 2026. Early-access signup is live -- which, as of right now, is the move.`,
+    stack: ['Python', 'Flask', 'OpenCV', 'AI Restoration', 'HTML/CSS/JS'],
+    links: [{ label: 'Early Access', url: 'https://capcrop.com' }]
+  },
+  {
     id: 'mbw',
     tag: 'Web · Node · SQLite',
     name: 'MarketingBuzzworthy',
@@ -37,6 +48,31 @@ const projects = [
     links: [
       { label: 'Play Now', url: 'https://casino.lab980.com' },
       { label: 'GitHub', url: 'https://github.com/ivjames/lucky-felt' }
+    ]
+  },
+  {
+    id: 'pillow-polygons',
+    tag: 'Web · Python · AI',
+    name: 'Pillow Polygons',
+    desc: "Type a prompt, pick a Claude model, get low-poly geometric art back as SVG or PNG. Named after the Python imaging library, not a throw cushion. Feed it a reference image and it'll lift the palette right off it.",
+    status: 'active',
+    statusText: 'Live (somehow)',
+    detail: `Pillow Polygons turns a text prompt into low-poly geometric art. Describe what you want, pick which Claude model does the thinking -- Haiku, Sonnet, or Opus -- and it generates the piece as scalable SVG or a flat PNG.\n\nThe name is a Python joke: it runs on Pillow, the imaging library, not a soft furnishing. Hand it a reference image and it samples a palette straight off it, so the output matches whatever vibe you're chasing.\n\nHere's the actual trick: Claude doesn't return an image, it returns Python drawing code. A renderer runs that code against Pillow for the raster PNG and a parallel SVG recorder for the vector version, so one generation gives you matching PNG and SVG. Seeds make any result reproducible, and everything lands in a SQLite gallery with folders and tags.\n\nIt makes genuinely nice wallpapers. That's the entire pitch.`,
+    stack: ['Python', 'Flask', 'Pillow', 'Anthropic API', 'SQLite'],
+    links: [{ label: 'Live Site', url: 'https://poly.lab980.com' }]
+  },
+  {
+    id: 'qa-ksink',
+    tag: 'Web · Python · Test Automation',
+    name: 'QA KSink',
+    desc: "Two repos that only make sense together: a 'kitchen sink' demo app stuffed with every form, flow, and edge case worth testing, and a Playwright bot whose whole job is clicking through it. The dashboard streams the live browser as it works and files an HTML report.",
+    status: 'active',
+    statusText: 'Live (somehow)',
+    detail: `QA KSink is two repos that only make sense together: a "kitchen sink" web app that exists purely to be the system under test, and a bot that exercises every scenario in it.\n\nThe target app is a React + Vite frontend over a FastAPI and SQLite backend -- forms, flows, auth, edge cases, and a documented scenario matrix of things that should (and pointedly should not) work. The bot drives it with Playwright under pytest, and instead of running headless it runs visible on purpose: the dashboard streams the live browser feed so you can actually watch it click through everything in real time, then spits out an HTML report of what passed and what didn't.\n\nThe dashboard itself is a small FastAPI service (/api/run, /api/status, /api/log) wrapped around the test run. The whole thing started as an excuse to practice test-automation tooling without a real app to break -- so building the breakable app became half the project.`,
+    stack: ['Python', 'Playwright', 'Pytest', 'FastAPI', 'React'],
+    links: [
+      { label: 'Bot Dashboard', url: 'https://qa-bot.lab980.com' },
+      { label: 'Target Site', url: 'https://qa-demo.lab980.com' }
     ]
   },
   {
