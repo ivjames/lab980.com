@@ -2,8 +2,9 @@
 #
 # update.sh — deploy lab980.com on the droplet.
 #
-# Syncs the web root to origin/main (discarding any local drift) and reloads
-# nginx. Run it after pushing to main:
+# Syncs the web root to origin/main (discarding any local drift), stamps a
+# fresh datetime onto the CSS/JS links to bust caches, then reloads nginx.
+# Run it after pushing to main:
 #
 #   /var/www/lab980/update.sh
 #
@@ -44,6 +45,17 @@ main() {
     echo "    $before -> $after"
     git --no-pager log --oneline "$before..$after"
   fi
+
+  # Cache-bust: stamp the asset links with a fresh datetime so browsers always
+  # fetch the new CSS/JS. This overwrites the committed ?v= placeholder; the
+  # next run's `git reset --hard` restores it before re-stamping, so it stays
+  # idempotent (the working tree just carries a one-line diff between runs).
+  local v; v="$(date +%Y%m%d%H%M%S)"
+  sed -i -E \
+    -e "s#(href=\"styles\.css)(\?v=[^\"]*)?\"#\1?v=$v\"#" \
+    -e "s#(src=\"main\.js)(\?v=[^\"]*)?\"#\1?v=$v\"#" \
+    index.html
+  echo "==> Stamped assets ?v=$v"
 
   # Static files are served straight from disk, so this is mostly belt-and-
   # suspenders — but it validates config and picks up any nginx changes.
