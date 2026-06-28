@@ -594,7 +594,7 @@ section {
 
 .about-text strong { color: var(--white); font-weight: 500; }
 
-.about-stats { display: flex; flex-direction: column; gap: 32px; grid-column: 1; }
+.about-stats { display: flex; flex-direction: column; gap: 32px; grid-column: 1; text-align: center; }
 
 .stat-row {
  border-top: 1px solid var(--border);
