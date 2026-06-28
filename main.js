@@ -153,13 +153,14 @@ function initStarfield() {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-  // depth layers — nearer layers are bigger and parallax faster.
-  // Alphas kept low so the field stays a subtle backdrop, never competing
-  // with foreground text.
+  // The canvas itself scrolls with the hero at 1x, so `speed` is the fraction
+  // of scroll the stars LAG by: on-screen they drift at (1 - speed)x. These
+  // values land the field around half the page's scroll speed, slower for the
+  // smaller/more-distant layers. Alphas stay low so it never fights the text.
   const LAYERS = [
-    { speed: 0.15, size: 0.6, alpha: 0.14, weight: 0.50 },
-    { speed: 0.35, size: 0.8, alpha: 0.24, weight: 0.34 },
-    { speed: 0.65, size: 1.1, alpha: 0.40, weight: 0.16 }
+    { speed: 0.62, size: 0.6, alpha: 0.14, weight: 0.50 },
+    { speed: 0.50, size: 0.8, alpha: 0.24, weight: 0.34 },
+    { speed: 0.40, size: 1.1, alpha: 0.40, weight: 0.16 }
   ];
 
   let W = 0, H = 0, stars = [], lastW = -1;
@@ -200,9 +201,10 @@ function initStarfield() {
     const scrollY = reduce ? 0 : (window.scrollY || 0);
     ctx.clearRect(0, 0, W, H);
     for (const s of stars) {
-      // positive-modulo wrap: plain `% H` goes negative when scrolling up,
-      // which made stars jump/vanish — this keeps y in [0, H).
-      const y = (((s.y - scrollY * s.speed) % H) + H) % H;
+      // ADD a fraction of scroll (canvas already moves 1x with the hero), so
+      // stars net out slower than the page. Positive-modulo wrap keeps y in
+      // [0, H) even when scrollY is negative (iOS rubber-band at the top).
+      const y = (((s.y + scrollY * s.speed) % H) + H) % H;
       ctx.globalAlpha = s.a;
       ctx.beginPath();
       ctx.arc(s.x, y, s.r, 0, Math.PI * 2);
