@@ -1,0 +1,46 @@
+# /etc/systemd/system/pillowpoly.service
+# Runs Pillow Polygons as a dedicated unprivileged user with the scene-code
+# worker wrapped in bubblewrap (no network, read-only FS, only renders writable).
+#
+# Prereqs (see setup commands in README_ANTIABUSE / the handoff brief):
+#   - `pillowpoly` system user owns /opt/pillowpoly
+#   - bubblewrap installed (`apt-get install bubblewrap`)
+#   - unprivileged user namespaces enabled (kernel.unprivileged_userns_clone=1
+#     on Debian/Ubuntu if not already; DO droplets generally have userns on)
+#   - single gunicorn worker, because the rate limiter is in-process memory
+#     (use Redis-backed limiting if you need >1 worker)
+
+[Unit]
+Description=Pillow Polygons
+After=network.target
+
+[Service]
+Type=simple
+User=pillowpoly
+Group=pillowpoly
+WorkingDirectory=/opt/pillowpoly
+Environment=ANTHROPIC_API_KEY=__set_me__
+Environment=GENERATE_RATE_PER_MIN=3
+Environment=GENERATE_RATE_PER_DAY=30
+Environment=SANDBOX_CPU_SECONDS=20
+Environment=SANDBOX_MEM_MB=1024
+Environment=SANDBOX_WALL_SECONDS=30
+# The load-bearing control: OS isolation of the scene-code worker.
+# --unshare-all includes --unshare-net (no egress). --ro-bind / / keeps the
+# rest of the FS read-only; only the renders dir is writable.
+Environment=SANDBOX_WRAP=bwrap --unshare-all --die-with-parent --ro-bind / / --tmpfs /tmp --proc /proc --dev /dev --bind /opt/pillowpoly/static/renders /opt/pillowpoly/static/renders
+ExecStart=/opt/pillowpoly/.venv/bin/gunicorn -w 1 -b 127.0.0.1:8040 app:app
+
+# App-process hardening (complements the per-render bwrap jail above).
+# NOTE: do NOT add RestrictNamespaces= — bwrap needs user/net/mount namespaces.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/pillowpoly/static/renders /opt/pillowpoly/poly.db
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectControlGroups=yes
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
