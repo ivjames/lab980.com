@@ -421,8 +421,9 @@ section {
  inset: 0;
  z-index: 100;
  display: flex;
- align-items: flex-end;
+ align-items: center;
  justify-content: center;
+ padding: clamp(16px, 4vw, 40px);
  pointer-events: none;
  opacity: 0;
  transition: opacity 0.3s ease;
@@ -443,18 +444,18 @@ section {
  position: relative;
  z-index: 1;
  background: var(--panel);
- border-top: 1px solid var(--border);
+ border: 1px solid var(--border);
  width: 100%;
  max-width: 780px;
  max-height: 85vh;
  overflow-y: auto;
  padding: 48px clamp(24px, 5vw, 64px);
- transform: translateY(40px);
+ transform: translateY(12px) scale(0.985);
  transition: transform 0.35s ease;
 }
 
 #project-modal.open .modal-panel {
- transform: translateY(0);
+ transform: translateY(0) scale(1);
 }
 
 .modal-header {
