@@ -44,10 +44,12 @@ button:focus-visible,
  align-items: center;
  padding: clamp(84px, 11vh, 116px) clamp(24px, 5vw, 80px) clamp(48px, 7vh, 76px);
  overflow: hidden;
- /* wide dark halo so hero text (incl. the index) stays legible over the
-    stars -- it dims a ring of stars around each glyph. Invisible on bare
-    black by nature; it only shows where the field is behind the text. */
- text-shadow: 0 0 10px rgba(0, 0, 0, 1), 0 0 22px rgba(0, 0, 0, 0.95), 0 0 38px rgba(0, 0, 0, 0.8);
+ /* tight dark halo hugging each glyph (~5px) -- stacked small black shadows
+    compound into a solid edge that darkens stars right at the letters */
+ text-shadow:
+   0 0 4px rgba(0, 0, 0, 1),
+   0 0 4px rgba(0, 0, 0, 1),
+   0 0 5px rgba(0, 0, 0, 0.95);
 }
 
 .cta-primary { text-shadow: none; }
@@ -107,21 +109,6 @@ button:focus-visible,
 }
 
 .hero-content { position: relative; min-width: 0; }
-
-/* soft dark backing behind the hero text blocks so the starfield is dimmed
-   across the whole region (a per-glyph shadow can't show on bare black) */
-.hero-content::before,
-.hero-index::before {
- content: '';
- position: absolute;
- inset: -24px -52px;
- z-index: -1;
- background: radial-gradient(ellipse at center,
-   rgba(0, 0, 0, 0.85) 0%,
-   rgba(0, 0, 0, 0.55) 45%,
-   rgba(0, 0, 0, 0) 78%);
- pointer-events: none;
-}
 
 .hero-label {
  font-family: var(--font-mono);
