@@ -13,13 +13,13 @@ const projects = [
   },
   {
     id: 'capcrop',
-    tag: 'SaaS · Photo · AI',
+    tag: 'SaaS · Python · AI',
     name: 'CapCrop',
-    desc: "Photo Studio, except it grew up and got a business model. Same shoebox-of-prints problem -- batch-scan, auto-crop, straighten, restore, tag -- now an actual product with its own domain. \"Rescue every photo from the scanner bed.\" Private beta in 2026, which is conveniently now.",
+    desc: "Photo Studio, except it grew up and got a business model. That one was the MVP; this is the real product -- same shoebox-of-prints problem (batch-scan, auto-crop, straighten, restore, tag), now on its own domain. \"Rescue every photo from the scanner bed.\" In private beta as of 2026, which is conveniently now.",
     status: 'wip',
     statusText: 'Private Beta -- 2026',
-    detail: `CapCrop is the grown-up version of Photo Studio: the same shoebox-of-prints problem, rebuilt as a real product with its own domain and an actual tagline -- "rescue every photo from the scanner bed."\n\nDrop in a flatbed scan with several photos on it and CapCrop pulls each one out by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film. AI handles captions and tag suggestions, but only when you ask it to, and you can bring your own API key.\n\nEverything exports as organized, fully-backed-up ZIPs, sorted into folders. Your photos are never used to train anything, and you can export or delete all of it whenever you want.\n\nPrivate beta in 2026. Early-access signup is live -- which, as of right now, is the move.`,
-    stack: ['Web App', 'AI Restoration', 'Auto-Tagging', 'BYO API Key'],
+    detail: `CapCrop is what happens when Photo Studio grows up. That one was the MVP -- enough to prove the shoebox-of-prints problem was worth solving. CapCrop is the same idea rebuilt as a real product, on the same Python foundation, with its own domain and an actual tagline: "rescue every photo from the scanner bed."\n\nDrop in a flatbed scan with several photos on it and CapCrop pulls each one out by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film. AI handles captions and tag suggestions, but only when you ask it to, and you can bring your own API key.\n\nEverything exports as organized, fully-backed-up ZIPs, sorted into folders. Your photos are never used to train anything, and you can export or delete all of it whenever you want.\n\nPrivate beta in 2026. Early-access signup is live -- which, as of right now, is the move.`,
+    stack: ['Python', 'Flask', 'OpenCV', 'AI Restoration', 'HTML/CSS/JS'],
     links: [{ label: 'Early Access', url: 'https://capcrop.com' }]
   },
   {
