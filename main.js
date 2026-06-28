@@ -162,17 +162,19 @@ function initStarfield() {
     { speed: 0.65, size: 1.1, alpha: 0.40, weight: 0.16 }
   ];
 
-  let W = 0, H = 0, stars = [];
+  let W = 0, H = 0, stars = [], lastW = -1;
 
-  function build() {
+  function sizeCanvas() {
     W = canvas.clientWidth;
     H = canvas.clientHeight;
     canvas.width = Math.round(W * dpr);
     canvas.height = Math.round(H * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.fillStyle = '#F0EDE8';
+  }
 
-    const density = (W * H) / 2000; // dense field
+  function generate() {
+    const density = (W * H) / 1200; // dense field
     stars = [];
     for (const layer of LAYERS) {
       const n = Math.round(density * layer.weight);
@@ -186,6 +188,12 @@ function initStarfield() {
         });
       }
     }
+  }
+
+  function build() {
+    sizeCanvas();
+    generate();
+    lastW = W;
   }
 
   function draw() {
@@ -215,10 +223,18 @@ function initStarfield() {
     }, { passive: true });
   }
 
+  // Only regenerate when the WIDTH changes. Mobile browsers fire resize on
+  // vertical scroll (the URL bar collapsing changes viewport height), and
+  // rebuilding there is what made the field "randomize" near the top.
   let resizeTimer;
   window.addEventListener('resize', () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(() => { build(); draw(); }, 150);
+    resizeTimer = setTimeout(() => {
+      const w = canvas.clientWidth;
+      sizeCanvas();
+      if (w !== lastW) { generate(); lastW = w; }
+      draw();
+    }, 150);
   });
 }
 

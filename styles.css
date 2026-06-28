@@ -132,7 +132,6 @@ button:focus-visible,
  color: var(--white);
  margin-bottom: 36px;
  text-transform: lowercase;
- overflow-wrap: break-word;
 }
 
 .hero-headline em {
