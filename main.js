@@ -6,8 +6,7 @@ const projects = [
     desc: 'A self-hosted web app for digitizing physical photo collections. Drag crop regions over flatbed scans, straighten and deskew individual photos, tag and organize them into folders, then export the whole thing as a zip. Built for the kind of shoebox-full-of-prints problem that never quite got solved.',
     status: 'active',
     statusText: 'Live (somehow)',
-    accentNote: 'Demo mode coming soon.',
-    detail: `Photo Studio started as a personal problem: a shoebox of old prints with no good way to digitize them without paying for a service or doing it manually one by one.\n\nThe app runs locally on your own machine. You load a flatbed scan, drag crop handles over each individual photo in the scan, and the app extracts, straightens, and deskews them automatically. Results go into tagged folders. When you're done, export everything as a zip.\n\nBuilt with Python on the backend and a browser-based frontend. No cloud, no subscription, no uploading your family photos to someone else's server.\n\nA public demo mode is in the works -- until then it's self-hosted only.`,
+    detail: `Photo Studio started as a personal problem: a shoebox of old prints with no good way to digitize them without paying for a service or doing it manually one by one.\n\nThe app runs locally on your own machine. You load a flatbed scan, drag crop handles over each individual photo in the scan, and the app extracts, straightens, and deskews them automatically. Results go into tagged folders. When you're done, export everything as a zip.\n\nBuilt with Python on the backend and a browser-based frontend. No cloud, no subscription, no uploading your family photos to someone else's server.`,
     stack: ['Python', 'Flask', 'OpenCV', 'HTML/CSS/JS'],
     links: [{ label: 'Live Site', url: 'https://photos.lab980.com' }]
   },
@@ -25,11 +24,11 @@ const projects = [
   {
     id: 'mbw',
     tag: 'Web · Node · SQLite',
-    name: 'MarketingBuzzworthy',
-    desc: 'A demo site built for a marketing company that never went anywhere. Multipage frontend, Node backend, contact form that actually stores submissions in a SQLite mailbox with read/unread and delete. Technically solid. Commercially deceased.',
-    status: 'archived',
-    statusText: "Archived (it's fine)",
-    detail: `MarketingBuzzworthy was a demo site commissioned by a marketing company as a proof of concept for a client-facing product. The company folded before it shipped.\n\nThe site itself is a complete multipage frontend -- home, services, about, contact -- with a Node backend handling contact form submissions. Those submissions land in a SQLite-backed admin mailbox with read/unread state and delete. One-command production deploy script included.\n\nIt's a solid reference implementation for anyone building a small marketing site with a real backend. The code is cleaner than the business case was.\n\nCurrently archived but browsable at its subdomain as a technical demo.`,
+    name: 'Marketing Buzzworthy',
+    desc: 'A demo site built for a marketing company that never went anywhere. Multipage frontend, Node backend, contact form that actually stores submissions in a SQLite mailbox with read/unread and delete. Technically solid. Commercially deceased -- but the demo is live.',
+    status: 'active',
+    statusText: 'Live Demo',
+    detail: `Marketing Buzzworthy was a demo site commissioned by a marketing company as a proof of concept for a client-facing product. The company folded before it shipped.\n\nThe site itself is a complete multipage frontend -- home, services, about, contact -- with a Node backend handling contact form submissions. Those submissions land in a SQLite-backed admin mailbox with read/unread state and delete. One-command production deploy script included.\n\nIt's a solid reference implementation for anyone building a small marketing site with a real backend. The code is cleaner than the business case was.\n\nIt's live and browsable at its subdomain as a working technical demo.`,
     stack: ['Node.js', 'Express', 'SQLite', 'Vanilla JS', 'Nginx'],
     links: [
       { label: 'Live Demo', url: 'https://mbw.lab980.com' },
@@ -110,6 +109,119 @@ function renderCards() {
   });
 }
 
+// ─── RENDER HERO INDEX ────────────────────────────────────
+function renderIndex() {
+  const list = document.querySelector('.hero-index-list');
+  const count = document.querySelector('.hero-index-count');
+  if (!list) return;
+
+  const pad = n => String(n).padStart(2, '0');
+  if (count) count.textContent = pad(projects.length);
+
+  list.innerHTML = projects.map((p, i) => `
+    <li>
+      <button class="hero-index-item" data-id="${p.id}" aria-label="View details for ${p.name}">
+        <span class="idx-num">${pad(i + 1)}</span>
+        <span class="idx-name">${p.name}</span>
+        <span class="idx-dot ${p.status}"></span>
+      </button>
+    </li>
+  `).join('');
+
+  list.querySelectorAll('.hero-index-item').forEach(item => {
+    item.addEventListener('click', () => scrollToCard(item.dataset.id));
+  });
+}
+
+// ─── HERO INDEX -> CARD ───────────────────────────────────
+function scrollToCard(id) {
+  const card = document.querySelector(`.project-card[data-id="${id}"]`);
+  if (!card) return;
+  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  card.classList.remove('flash');
+  // force reflow so the animation can retrigger on repeat clicks
+  void card.offsetWidth;
+  card.classList.add('flash');
+  card.addEventListener('animationend', () => card.classList.remove('flash'), { once: true });
+}
+
+// ─── STARFIELD (parallax, reduced-motion aware) ───────────
+function initStarfield() {
+  const canvas = document.querySelector('.starfield');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+  // depth layers — nearer layers are bigger and parallax faster.
+  // Alphas kept low so the field stays a subtle backdrop, never competing
+  // with foreground text.
+  const LAYERS = [
+    { speed: 0.15, size: 0.6, alpha: 0.14, weight: 0.50 },
+    { speed: 0.35, size: 0.8, alpha: 0.24, weight: 0.34 },
+    { speed: 0.65, size: 1.1, alpha: 0.40, weight: 0.16 }
+  ];
+
+  let W = 0, H = 0, stars = [];
+
+  function build() {
+    W = canvas.clientWidth;
+    H = canvas.clientHeight;
+    canvas.width = Math.round(W * dpr);
+    canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = '#F0EDE8';
+
+    const density = (W * H) / 2000; // dense field
+    stars = [];
+    for (const layer of LAYERS) {
+      const n = Math.round(density * layer.weight);
+      for (let i = 0; i < n; i++) {
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: layer.size * (0.6 + Math.random() * 0.8),
+          a: layer.alpha * (0.5 + Math.random() * 0.5),
+          speed: layer.speed
+        });
+      }
+    }
+  }
+
+  function draw() {
+    const scrollY = reduce ? 0 : (window.scrollY || 0);
+    ctx.clearRect(0, 0, W, H);
+    for (const s of stars) {
+      // positive-modulo wrap: plain `% H` goes negative when scrolling up,
+      // which made stars jump/vanish — this keeps y in [0, H).
+      const y = (((s.y - scrollY * s.speed) % H) + H) % H;
+      ctx.globalAlpha = s.a;
+      ctx.beginPath();
+      ctx.arc(s.x, y, s.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  build();
+  draw();
+
+  if (!reduce) {
+    let ticking = false;
+    window.addEventListener('scroll', () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => { draw(); ticking = false; });
+    }, { passive: true });
+  }
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { build(); draw(); }, 150);
+  });
+}
+
 // ─── MODAL ────────────────────────────────────────────────
 function openModal(id) {
   const p = projects.find(p => p.id === id);
@@ -146,6 +258,8 @@ document.querySelector('.cta-secondary').addEventListener('click', function(e) {
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   renderCards();
+  renderIndex();
+  initStarfield();
 
   const modal = document.getElementById('project-modal');
   modal.querySelector('.modal-close').addEventListener('click', closeModal);
