@@ -40,10 +40,9 @@ button:focus-visible,
 /* ─── HERO (asymmetric split) ────────────────────────────── */
 .hero {
  position: relative;
- min-height: 100vh;
  display: flex;
  align-items: center;
- padding: clamp(96px, 14vh, 150px) clamp(24px, 5vw, 80px) clamp(64px, 9vh, 110px);
+ padding: clamp(84px, 11vh, 116px) clamp(24px, 5vw, 80px) clamp(48px, 7vh, 76px);
  overflow: hidden;
 }
 
