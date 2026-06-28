@@ -582,7 +582,7 @@ section {
  grid-template-columns: 0.4fr 0.6fr;
  grid-auto-flow: dense;
  gap: 80px;
- align-items: start;
+ align-items: center;
 }
 
 .about-text {
