@@ -44,12 +44,16 @@ button:focus-visible,
  align-items: center;
  padding: clamp(84px, 11vh, 116px) clamp(24px, 5vw, 80px) clamp(48px, 7vh, 76px);
  overflow: hidden;
- /* tight dark halo hugging each glyph (~5px) -- stacked small black shadows
-    compound into a solid edge that darkens stars right at the letters */
+ /* tight dark halo hugging each glyph (~5px) -- many stacked full-opacity
+    black shadows compound into a near-solid edge that knocks back stars
+    right at the letters */
  text-shadow:
+   0 0 3px rgba(0, 0, 0, 1),
    0 0 4px rgba(0, 0, 0, 1),
    0 0 4px rgba(0, 0, 0, 1),
-   0 0 5px rgba(0, 0, 0, 0.95);
+   0 0 5px rgba(0, 0, 0, 1),
+   0 0 5px rgba(0, 0, 0, 1),
+   0 0 6px rgba(0, 0, 0, 1);
 }
 
 .cta-primary { text-shadow: none; }
