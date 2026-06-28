@@ -96,9 +96,9 @@ button:focus-visible,
  z-index: 5;
  width: 100%;
  display: grid;
- grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+ grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.55fr);
  gap: clamp(40px, 6vw, 96px);
- align-items: center;
+ align-items: start;
 }
 
 .hero-content { position: relative; min-width: 0; }
@@ -189,6 +189,8 @@ button:focus-visible,
  border-top: 1px solid var(--border);
  padding-top: 16px;
  min-width: 0;
+ max-width: 420px;
+ margin-left: auto;
 }
 
 .hero-index-head {
@@ -286,16 +288,16 @@ section {
  position: relative;
  z-index: 1;
  background: var(--black);
- padding: clamp(64px, 10vh, 120px) clamp(24px, 5vw, 80px);
+ padding: clamp(40px, 6vh, 68px) clamp(24px, 5vw, 80px);
 }
 
 .section-header {
  display: flex;
  align-items: baseline;
  gap: 20px;
- margin-bottom: 56px;
+ margin-bottom: 36px;
  border-top: 1px solid var(--border);
- padding-top: 32px;
+ padding-top: 28px;
 }
 
 .section-label {
@@ -667,6 +669,7 @@ footer {
 @media (max-width: 1024px) {
  .hero-grid { grid-template-columns: minmax(0, 1fr); gap: clamp(40px, 8vh, 64px); }
  .hero { align-items: flex-start; }
+ .hero-index { max-width: none; margin-left: 0; }
  .scroll-indicator { display: none; }
 }
 
