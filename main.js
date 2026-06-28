@@ -158,9 +158,10 @@ function initStarfield() {
   // values land the field around half the page's scroll speed, slower for the
   // smaller/more-distant layers. Alphas stay low so it never fights the text.
   const LAYERS = [
-    { speed: 0.62, size: 0.6, alpha: 0.14, weight: 0.50 },
-    { speed: 0.50, size: 0.8, alpha: 0.24, weight: 0.34 },
-    { speed: 0.40, size: 1.1, alpha: 0.40, weight: 0.16 }
+    { speed: 0.62, size: 0.6, alpha: 0.16, weight: 0.46 }, // faint dust — keeps it subtle
+    { speed: 0.52, size: 0.9, alpha: 0.36, weight: 0.30 }, // mid
+    { speed: 0.42, size: 1.3, alpha: 0.72, weight: 0.16 }, // bright
+    { speed: 0.36, size: 1.7, alpha: 0.98, weight: 0.08 }  // standouts — these pop
   ];
 
   let W = 0, H = 0, stars = [], lastW = -1;
@@ -175,7 +176,7 @@ function initStarfield() {
   }
 
   function generate() {
-    const density = (W * H) / 1200; // dense field
+    const density = (W * H) / 900; // dense field
     stars = [];
     for (const layer of LAYERS) {
       const n = Math.round(density * layer.weight);
