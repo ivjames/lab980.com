@@ -57,8 +57,8 @@ const projects = [
     desc: "Type a prompt, pick a Claude model, get low-poly geometric art back as SVG or PNG. Named after the Python imaging library, not a throw cushion. Feed it a reference image and it'll lift the palette right off it.",
     status: 'active',
     statusText: 'Live (somehow)',
-    detail: `Pillow Polygons turns a text prompt into low-poly geometric art. Describe what you want, pick which Claude model does the thinking -- Haiku, Sonnet, or Opus -- and it generates the piece as scalable SVG or a flat PNG.\n\nThe name is a Python joke: it runs on Pillow, the imaging library, not a soft furnishing. Hand it a reference image and it samples a palette straight off it, so the output matches whatever vibe you're chasing.\n\nThe backend is Python on Flask serving a single-page frontend. The actual taste lives in an Anthropic API call that decides shapes and colors, with Pillow doing the rasterizing.\n\nIt makes genuinely nice wallpapers. That's the entire pitch.`,
-    stack: ['Python', 'Flask', 'Pillow', 'Anthropic API', 'HTML/CSS/JS'],
+    detail: `Pillow Polygons turns a text prompt into low-poly geometric art. Describe what you want, pick which Claude model does the thinking -- Haiku, Sonnet, or Opus -- and it generates the piece as scalable SVG or a flat PNG.\n\nThe name is a Python joke: it runs on Pillow, the imaging library, not a soft furnishing. Hand it a reference image and it samples a palette straight off it, so the output matches whatever vibe you're chasing.\n\nHere's the actual trick: Claude doesn't return an image, it returns Python drawing code. A renderer runs that code against Pillow for the raster PNG and a parallel SVG recorder for the vector version, so one generation gives you matching PNG and SVG. Seeds make any result reproducible, and everything lands in a SQLite gallery with folders and tags.\n\nIt makes genuinely nice wallpapers. That's the entire pitch.`,
+    stack: ['Python', 'Flask', 'Pillow', 'Anthropic API', 'SQLite'],
     links: [{ label: 'Live Site', url: 'https://poly.lab980.com' }]
   },
   {
