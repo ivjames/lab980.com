@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+# lab980-deprovision — tear down a lab980 subdomain's infrastructure.
+#
+# Removes, idempotently:
+#   1. nginx vhost       (disable + delete /etc/nginx/sites-{available,enabled}/<fqdn>)
+#   2. TLS cert          (certbot delete)      — unless --keep-cert
+#   3. DigitalOcean DNS  (doctl record delete) — unless --keep-dns
+#
+# With --purge it ALSO (destructive): stops+removes the pm2 app and deletes the
+# app directory (including its data/ and SQLite DB). Without --purge, the dir and
+# any running process are left untouched.
+set -euo pipefail
+
+DOMAIN="lab980.com"
+DIR=""
+KEEP_DNS=0
+KEEP_CERT=0
+PURGE=0
+YES=0
+STUB=""
+
+c_blue=$'\033[1;34m'; c_yellow=$'\033[1;33m'; c_red=$'\033[1;31m'; c_off=$'\033[0m'
+log()  { printf '%s==>%s %s\n' "$c_blue" "$c_off" "$*"; }
+warn() { printf '%swarn:%s %s\n' "$c_yellow" "$c_off" "$*" >&2; }
+die()  { printf '%serror:%s %s\n' "$c_red" "$c_off" "$*" >&2; exit 1; }
+
+usage() {
+  cat <<'USAGE'
+lab980-deprovision — tear down a lab980 subdomain (nginx, TLS, DNS).
+
+Usage:
+  lab980-deprovision <stub> [options]
+
+  <stub>        subdomain label, e.g. "gigit"  ->  gigit.lab980.com
+
+Options:
+  --domain D    base domain (default: lab980.com)
+  --dir PATH    app directory (default: /var/www/<stub>) — only used with --purge
+  --keep-dns    leave the DigitalOcean DNS record in place
+  --keep-cert   leave the TLS certificate in place
+  --purge       ALSO stop the pm2 app and delete the app directory (DESTRUCTIVE)
+  --yes         skip the confirmation prompt
+  -h, --help    this help
+
+By default the app directory and any running process are left alone; only the
+public-facing infra (nginx/TLS/DNS) is removed. Use --purge for a full wipe.
+USAGE
+}
+
+# ---- parse args ----
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --domain) DOMAIN="$2"; shift 2;;
+    --dir)    DIR="$2"; shift 2;;
+    --keep-dns)  KEEP_DNS=1; shift;;
+    --keep-cert) KEEP_CERT=1; shift;;
+    --purge)  PURGE=1; shift;;
+    --yes|-y) YES=1; shift;;
+    -h|--help) usage; exit 0;;
+    -*) die "unknown option: $1 (see --help)";;
+    *) if [ -z "$STUB" ]; then STUB="$1"; else die "unexpected arg: $1"; fi; shift;;
+  esac
+done
+
+[ -n "$STUB" ] || { usage; exit 1; }
+[ "$(id -u)" -eq 0 ] || die "run as root."
+
+FQDN="$STUB.$DOMAIN"
+DIR="${DIR:-/var/www/$STUB}"
+
+# ---- show plan + confirm ----
+log "Deprovision plan for $FQDN:"
+echo "    - remove nginx vhost (/etc/nginx/sites-{available,enabled}/$FQDN)"
+[ "$KEEP_CERT" -eq 0 ] && echo "    - delete TLS cert ($FQDN)"
+[ "$KEEP_DNS"  -eq 0 ] && echo "    - delete DigitalOcean DNS A record ($FQDN)"
+if [ "$PURGE" -eq 1 ]; then
+  echo "    - ${c_red}stop pm2 app '$STUB' and rm -rf $DIR (DESTRUCTIVE)${c_off}"
+fi
+
+if [ "$YES" -eq 0 ]; then
+  printf 'Type the full hostname (%s) to confirm: ' "$FQDN"
+  read -r reply
+  [ "$reply" = "$FQDN" ] || die "confirmation did not match; aborting."
+fi
+
+# ---- 1. nginx ----
+removed_nginx=0
+for f in "/etc/nginx/sites-enabled/$FQDN" "/etc/nginx/sites-available/$FQDN"; do
+  if [ -e "$f" ] || [ -L "$f" ]; then rm -f "$f"; removed_nginx=1; fi
+done
+if [ "$removed_nginx" -eq 1 ]; then
+  log "nginx: vhost removed"
+  nginx -t && systemctl reload nginx || warn "nginx reload skipped (nginx -t failed — check other sites)"
+else
+  log "nginx: no vhost for $FQDN (nothing to remove)"
+fi
+
+# ---- 2. TLS cert ----
+if [ "$KEEP_CERT" -eq 0 ]; then
+  if command -v certbot >/dev/null; then
+    if certbot certificates 2>/dev/null | grep -q "Certificate Name: $FQDN$"; then
+      log "cert: deleting $FQDN"
+      certbot delete --cert-name "$FQDN" -n || warn "certbot delete failed"
+    else
+      log "cert: none named $FQDN (skipping)"
+    fi
+  else
+    warn "certbot not found; skipping cert deletion"
+  fi
+fi
+
+# ---- 3. DNS via doctl ----
+if [ "$KEEP_DNS" -eq 0 ]; then
+  if command -v doctl >/dev/null; then
+    ids="$(doctl compute domain records list "$DOMAIN" --no-header --format ID,Type,Name 2>/dev/null \
+           | awk -v n="$STUB" '$2=="A" && $3==n {print $1}')"
+    if [ -n "$ids" ]; then
+      for id in $ids; do
+        log "DNS: deleting A record $FQDN (id $id)"
+        doctl compute domain records delete "$DOMAIN" "$id" -f || warn "failed to delete DNS record $id"
+      done
+    else
+      log "DNS: no A record for $FQDN (skipping)"
+    fi
+  else
+    warn "doctl not found; skipping DNS deletion"
+  fi
+fi
+
+# ---- 4. purge app (destructive) ----
+if [ "$PURGE" -eq 1 ]; then
+  if command -v pm2 >/dev/null; then
+    if pm2 describe "$STUB" >/dev/null 2>&1; then
+      log "pm2: stopping + deleting app '$STUB'"
+      pm2 delete "$STUB" >/dev/null && pm2 save >/dev/null || warn "pm2 delete failed"
+    fi
+  fi
+  if [ -d "$DIR" ]; then
+    log "fs: removing $DIR"
+    rm -rf "$DIR"
+  fi
+fi
+
+log "Done. $FQDN deprovisioned."
