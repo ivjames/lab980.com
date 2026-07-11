@@ -19,10 +19,14 @@ All sites live on one Ubuntu droplet serving many `*.lab980.com` subdomains
 
 ## Provisioning a new subdomain
 
-Infra scaffolding is scripted (in this repo's bin/, symlinked to /usr/local/bin):
+Infra scaffolding is scripted in this repo's bin/. Symlink each script onto
+PATH under its own name (once, on the droplet):
 
-  lab980-provision <stub> [repo]     # DO DNS + /var/www dir + repo clone + nginx + TLS
-  lab980-deprovision <stub>          # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
+  ln -sf /var/www/lab980/bin/provision-site   /usr/local/bin/provision-site
+  ln -sf /var/www/lab980/bin/deprovision-site /usr/local/bin/deprovision-site
+
+  provision-site <stub> [repo]       # DO DNS + /var/www dir + repo clone + nginx + TLS
+  deprovision-site <stub>            # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
 
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
