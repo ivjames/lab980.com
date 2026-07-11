@@ -3,12 +3,12 @@ const projects = [
     id: 'photo-studio',
     tag: 'Web · Python · Self-Hosted',
     name: 'Photo Studio',
-    desc: 'A self-hosted web app for digitizing physical photo collections. Drag crop regions over flatbed scans, straighten and deskew individual photos, tag and organize them into folders, then export the whole thing as a zip. Built for the kind of shoebox-full-of-prints problem that never quite got solved.',
+    desc: 'A self-hosted web app for digitizing physical photo collections. Drag crop regions over flatbed scans, straighten and deskew individual photos, tag and organize them into folders, then export the whole thing as a zip. The MVP that CapCrop grew out of -- now retired behind a login while the grown-up version takes over.',
     status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `Photo Studio started as a personal problem: a shoebox of old prints with no good way to digitize them without paying for a service or doing it manually one by one.\n\nThe app runs locally on your own machine. You load a flatbed scan, drag crop handles over each individual photo in the scan, and the app extracts, straightens, and deskews them automatically. Results go into tagged folders. When you're done, export everything as a zip.\n\nBuilt with Python on the backend and a browser-based frontend. No cloud, no subscription, no uploading your family photos to someone else's server.`,
+    statusText: 'Alive, but private now',
+    detail: `Photo Studio started as a personal problem: a shoebox of old prints with no good way to digitize them without paying for a service or doing it manually one by one.\n\nThe app runs locally on your own machine. You load a flatbed scan, drag crop handles over each individual photo in the scan, and the app extracts, straightens, and deskews them automatically. Results go into tagged folders. When you're done, export everything as a zip.\n\nBuilt with Python on the backend and a browser-based frontend. No cloud, no subscription, no uploading your family photos to someone else's server.\n\nIt did its job so well it earned a sequel: CapCrop is the productized version, and Photo Studio now lives quietly behind a login.`,
     stack: ['Python', 'Flask', 'OpenCV', 'HTML/CSS/JS'],
-    links: [{ label: 'Live Site', url: 'https://photos.lab980.com' }]
+    links: []
   },
   {
     id: 'capcrop',
@@ -20,6 +20,28 @@ const projects = [
     detail: `CapCrop is what happens when Photo Studio grows up. That one was the MVP -- enough to prove the shoebox-of-prints problem was worth solving. CapCrop is the same idea rebuilt as a real product, on the same Python foundation, with its own domain and an actual tagline: "rescue every photo from the scanner bed."\n\nDrop in a flatbed scan with several photos on it and CapCrop pulls each one out by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film. AI handles captions and tag suggestions, but only when you ask it to, and you can bring your own API key.\n\nEverything exports as organized, fully-backed-up ZIPs, sorted into folders. Your photos are never used to train anything, and you can export or delete all of it whenever you want.\n\nPrivate beta in 2026. Early-access signup is live -- which, as of right now, is the move.`,
     stack: ['Python', 'Flask', 'OpenCV', 'AI Restoration', 'HTML/CSS/JS'],
     links: [{ label: 'Early Access', url: 'https://capcrop.com' }]
+  },
+  {
+    id: 'atheismiq',
+    tag: 'Web · Next.js · Postgres',
+    name: 'AtheismIQ',
+    desc: 'A quiz that finds out what you actually know about atheism. Two intake questions place you on the belief/knowledge grid, the quiz itself covers the misconceptions everyone confidently repeats, and you get a named position, a score, and a share card generated on the fly.',
+    status: 'active',
+    statusText: 'Live (somehow)',
+    detail: `AtheismIQ is a shareable quiz app about atheism -- the terminology, the misconceptions, and where you actually land on the belief/knowledge axes.\n\nTwo intake questions place you on the grid (agnostic atheist, gnostic theist, and so on), then the quiz tests you on the things people get wrong most. Instant scoring, an answer-review modal with sourced explanations, and a leaderboard.\n\nEvery result gets its own shareable URL with a dynamically generated Open Graph card -- rendered in-house with next/og, no external image service. Player types are stored as two boolean flags, which makes for a fun stats query: right/wrong rates broken down by who's answering.\n\nSeeding is idempotent, so redeploys never wipe anyone's results. Small detail, hard-won.`,
+    stack: ['Next.js 15', 'TypeScript', 'Prisma', 'PostgreSQL', 'Tailwind'],
+    links: [{ label: 'Take the Quiz', url: 'https://atheismiq.lab980.com' }]
+  },
+  {
+    id: 'artificial-atheist',
+    tag: 'AI · Eleventy · Autonomous',
+    name: 'Artificial Atheist',
+    desc: "A publication that writes itself. Every other day a GitHub Action wakes up, asks Claude for an article on the least-covered topic, generates an illustration, commits the result, and redeploys the site. No server process. No human in the loop -- unless I feel like steering.",
+    status: 'active',
+    statusText: 'Live & self-publishing',
+    detail: `Artificial Atheist is an AI-authored publication on atheism, skepticism, and critical thinking -- and the whole editorial pipeline is a scheduled GitHub Action.\n\nEvery other day the generator inventories what's already been published, picks the least-covered topic, asks Claude for an article with a genuinely new angle (titles are deduped against the archive), generates an AI illustration, and commits Markdown. The commit triggers a static rebuild and the piece is live. Nobody touched anything.\n\nWhen I do want a say, there's a local human-in-the-loop "Studio" for steering an article from a seed idea. There's also an A/B harness that runs the same prompt through every AI provider I have keys for and logs latency and word count -- the generator itself is provider-agnostic.\n\nCurrent work: wiring it up to push new posts to Facebook automatically, because a publication that writes itself should market itself too.`,
+    stack: ['Eleventy', 'Node', 'Claude API', 'OpenAI Images', 'GitHub Actions'],
+    links: [{ label: 'Read It', url: 'https://artificialatheist.com' }]
   },
   {
     id: 'mbw',
@@ -37,13 +59,13 @@ const projects = [
   },
   {
     id: 'lucky-felt',
-    tag: 'Web · Vite · Static',
+    tag: 'Web · React · Express',
     name: 'Lucky Felt Casino',
-    desc: "A browser casino with no real stakes. Texas Hold'em, Roulette, Craps, Sic Bo, and three slot machines. Passwordless accounts via localStorage -- no backend, no server, no excuses. Pure frontend degeneracy.",
+    desc: "A browser casino with no real stakes. Texas Hold'em, Roulette, Craps, Sic Bo, and three slot machines. The browser is treated as hostile: every outcome is computed server-side with cryptographic randomness, and sign-in is passwordless email codes. Pure degeneracy, rigorously enforced.",
     status: 'active',
     statusText: 'Live (somehow)',
-    detail: `Lucky Felt Casino is a fully functional browser casino with zero real money involved and zero backend required.\n\nGames: Texas Hold'em poker with full betting rounds, Roulette with inside and outside bets, Craps, Sic Bo, and three slot machines with different volatility profiles.\n\nAccounts are email-based and passwordless -- everything lives in localStorage. No server, no database, no auth headaches. That also means accounts are per-browser, but for a demo casino that's fine.\n\nBuilt with Vite as a pure static site. Deploys anywhere -- DigitalOcean App Platform, Netlify, Vercel, or just nginx serving a dist folder.`,
-    stack: ['Vite', 'Vanilla JS', 'CSS', 'localStorage'],
+    detail: `Lucky Felt Casino is a fully functional browser casino with zero real money involved -- and a security model that pretends otherwise.\n\nGames: Texas Hold'em poker with full betting rounds, Roulette with inside and outside bets, Craps, Sic Bo, and three slot machines with different volatility profiles.\n\nThe frontend never decides anything that matters. All money-deciding randomness runs server-side through crypto.randomInt, payout tables live on the server as the single source of truth, every bet is validated, and poker hole cards stay server-side until showdown. If you can cheat it from the browser, that's a bug report I want.\n\nAccounts are email-based and passwordless: hashed, single-use, expiring 6-digit codes and bearer-token sessions, with rate limiting on the endpoints that need it. React + Vite up front, Express + SQLite behind.`,
+    stack: ['React', 'Vite', 'Express', 'SQLite', 'Nodemailer'],
     links: [
       { label: 'Play Now', url: 'https://casino.lab980.com' },
       { label: 'GitHub', url: 'https://github.com/ivjames/lucky-felt' }
@@ -73,6 +95,72 @@ const projects = [
       { label: 'Bot Dashboard', url: 'https://qa-bot.lab980.com' },
       { label: 'Target Site', url: 'https://qa-demo.lab980.com' }
     ]
+  },
+  {
+    id: 'toulmin',
+    tag: 'Web · Python · Education',
+    name: 'Toulmin',
+    desc: "An argument-diagramming tool built on Stephen Toulmin's model. Feed it a claim and it walks you through grounds, warrant, backing, qualifier, and rebuttal, shows a completeness meter for the parts you're dodging, and renders the whole thing as a proper diagram.",
+    status: 'active',
+    statusText: 'Live (somehow)',
+    detail: `Toulmin is a small web app for building and visualizing arguments using Stephen Toulmin's model of argumentation -- the six-part structure debate students learn and everyone else argues without.\n\nYou break an argument into claim, grounds, warrant, backing, qualifier, and rebuttal. A completeness meter shows which parts you're still missing (the warrant, it's always the warrant), and the result renders as a proper Toulmin diagram with a print/PDF view.\n\nArguments export and import as JSON -- invalid items are skipped, not fatal -- and there's a seed CLI loaded with classic example arguments. Dark mode follows your system preference.\n\nUnder the hood: a single-file Flask app with SQLite and zero build step, tested with pytest for the API and a Playwright browser test that runs a full real-user flow against a throwaway database, across Python 3.9 through 3.12 in CI.`,
+    stack: ['Python', 'Flask', 'SQLite', 'Vanilla JS'],
+    links: [{ label: 'Build an Argument', url: 'https://toulmin.lab980.com' }]
+  },
+  {
+    id: 'gigit',
+    tag: 'SaaS · Next.js · Scheduling',
+    name: 'Gigit',
+    desc: 'Gig scheduling for talent agents with one hard rule: double-booking is impossible. A pure, unit-tested engine checks every confirmed booking across every agent -- timezone-aware, DST-correct -- before anything is allowed to land on a calendar.',
+    status: 'wip',
+    statusText: 'Built, not launched',
+    detail: `Gigit is agent-first gig scheduling: talent agents book pros onto gigs, and the app's entire reason for existing is that it will not let two confirmed bookings overlap. Ever.\n\nThe scheduling engine is pure and unit-tested -- half-open interval overlap, absolute instants plus a per-gig IANA timezone so cross-timezone conflicts are caught DST-correctly. It checks all of a pro's confirmed bookings regardless of which agent owns the gig, but rival agents never see each other's business: foreign gigs are redacted down to "booked elsewhere," even inside the error messages.\n\nAround the engine: an openings board where pros raise their hand for roles, two-way iCalendar interop including a token-based subscription feed, bulk import from CSV, spreadsheets, or .ics, and a geocoding location picker that makes you choose a candidate instead of trusting the top match. Distances show in miles for US venues and km elsewhere, because details matter.\n\nFully built and running in the lab. Launching is a different project.`,
+    stack: ['Next.js 15', 'TypeScript', 'Prisma', 'SQLite', 'Tailwind'],
+    links: []
+  },
+  {
+    id: 'boxo-show',
+    tag: 'SaaS · Django · Stripe',
+    name: 'Boxo.show',
+    desc: 'White-label box office software. One Django deployment serves many branded theaters, each on its own subdomain: browse-to-buy Stripe checkout, emailed QR tickets, and an in-browser door scanner that can decode multiple tickets in a single camera frame.',
+    status: 'wip',
+    statusText: 'In development',
+    detail: `Boxo.show is what happens after you rebuild two real theatre websites and realize every venue needs the same thing: a storefront, a checkout, and a way to scan tickets at the door.\n\nIt's a multi-tenant Django platform -- one deployment, many branded theaters. Tenants resolve from the subdomain, branding is per-tenant CSS custom properties, and staff roles are a cumulative hierarchy from owner down to scanner. The public side goes browse, buy, Stripe checkout, emailed QR ticket; the staff side manages events, orders, and the door.\n\nThe door scanner is the fun part: it runs in the browser and can pick apart multiple QR codes in one camera frame -- finder-pattern counting, overlapping-half decoding, analysis cropped to what's actually on screen. Nobody at a will-call table holds tickets up one at a time.\n\nIn active development. Not on the internet yet, on purpose.`,
+    stack: ['Django', 'PostgreSQL', 'Stripe', 'Alpine.js'],
+    links: []
+  },
+  {
+    id: 'bonita',
+    tag: 'Client · Static · Accessibility',
+    name: 'Bonita Center for the Arts',
+    desc: 'Real client work: migrating a 701-seat performing-arts theatre off Wix. Started with an accessibility audit of the live site -- 26 WCAG violations -- and rebuilt it as a dependency-free static site with zero trackers and a staff-editable events admin.',
+    status: 'wip',
+    statusText: 'Migration in progress',
+    detail: `The Bonita Center for the Arts is a real 701-seat venue with a real website problem: a Wix site with 26 WCAG violations found by an axe-core audit -- unlabeled form fields, missing H1s, around forty misused heading tags.\n\nThe rebuild is deliberately boring in the best way: plain static HTML and CSS, no build step, no third-party requests, not even an external font (it's self-hosted). Shared page chrome is generated into partials and assembled by nginx server-side includes at request time.\n\nStaff get an events admin with live preview that saves straight to the site through a backend written in nothing but the Node standard library -- scrypt-hashed accounts, form intake, events storage. Structured data marks the venue up properly for search.\n\nThe audit tooling itself is part of the project: a headless-Chromium crawler running axe-core against every page, so "accessible" is a measured claim, not a vibe.`,
+    stack: ['HTML/CSS', 'nginx SSI', 'Node (stdlib)', 'axe-core'],
+    links: [{ label: 'Staging Rebuild', url: 'https://bonita.lab980.com' }]
+  },
+  {
+    id: 'highlander',
+    tag: 'Client · Static · Design',
+    name: 'Highlander Auditorium',
+    desc: "A truthful redesign for a 1,073-seat school-district auditorium. Every invented claim in the old copy got fact-checked out, the logo was reconstructed as a clean SVG from the venue's only raster file, and the palette was sampled from their actual stage-wash lighting.",
+    status: 'wip',
+    statusText: 'Redesign delivered',
+    detail: `Highlander Auditorium is a 1,073-seat proscenium theatre run by a school district, and its redesign started with subtraction: content that couldn't be verified -- including an invented events season -- came out before anything new went in.\n\nWhat went in is fast and honest. Static multi-page HTML with no framework and no build step. Zero third-party requests except a map embed: even the weather widget is a custom UI hitting a keyless, CORS-friendly forecast API client-side, and it hides itself on failure so it can never look broken.\n\nThe design details were archaeology. The venue's logo existed only as a raster image, so it was reconstructed as a clean SVG. The accent color was sampled from photos of their actual stage-wash lighting. Fonts are self-hosted variable fonts, subset down to about 100KB total.\n\nDelivered as a complete handoff -- including an honest open-items list of everything still unverified, down to a ZIP code discrepancy.`,
+    stack: ['HTML/CSS/JS', 'Open-Meteo', 'nginx'],
+    links: []
+  },
+  {
+    id: 'burner-map',
+    tag: 'Maps · ???',
+    name: 'Burner Map',
+    desc: "A map app. For burners. It exists, it's in the lab, and that's all you're getting for now.",
+    status: 'wip',
+    statusText: 'Under wraps',
+    detail: `There is a map. There are burners. The two are being introduced to each other in the lab right now.\n\nDetails when it's ready. Or when it isn't, which is also a proud lab980 tradition.`,
+    stack: ['TBD'],
+    links: []
   },
   {
     id: 'lab980',
