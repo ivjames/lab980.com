@@ -146,7 +146,17 @@ elif [ -n "$REPO" ]; then
 fi
 mkdir -p "$DIR/data"
 
-# ---- pick a free local port ----
+# ---- pick a local port ----
+# Re-provisioning an existing site dir (e.g. pointing a second/new domain at an
+# app that's already deployed): reuse the port already in its .env, so the new
+# vhost proxies to the SAME running app. Without this we'd pick a fresh free
+# port for the vhost while gunicorn keeps its old one -> nginx 502. An explicit
+# --port still wins.
+if [ -z "$PORT" ] && [ -f "$DIR/.env" ]; then
+  PORT="$(grep -E '^[[:space:]]*(export[[:space:]]+)?PORT=' "$DIR/.env" \
+          | head -1 | sed 's/.*PORT=//' | tr -d '"'\'' \t\r')"
+  [ -n "$PORT" ] && log "reusing existing port $PORT from $DIR/.env"
+fi
 if [ -z "$PORT" ]; then
   listening="$(ss -ltn 2>/dev/null | awk 'NR>1{print $4}' | sed 's/.*://' | sort -u)"
   in_nginx="$(grep -rhoE '127\.0\.0\.1:[0-9]+' /etc/nginx/sites-available 2>/dev/null | sed 's/.*://' | sort -u)"
