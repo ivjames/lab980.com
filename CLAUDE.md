@@ -43,7 +43,7 @@ Add the new domain as a DigitalOcean zone first (`doctl compute domain create
 - **boxoffice** moved off `boxoffice.lab980.com` to its own **boxo.show** apex
   (its own tenant subdomains + a `beta.boxo.show` staging deploy). It still
   lives in `/var/www/boxoffice` on this box — see `boxoffice/DEPLOY.md`
-  ("Migrating boxoffice.lab980.com → boxo.show") for the full cutover runbook.
+  ("Moving boxoffice to its own boxo.show domain") for the full cutover runbook.
 
 ## Engineering lessons
 
