@@ -27,6 +27,24 @@ Infra scaffolding is scripted (in this repo's bin/, symlinked to /usr/local/bin)
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
 
+### Sites on their own domain (apex, not a *.lab980.com subdomain)
+
+A site can graduate off `*.lab980.com` onto its own domain while still being
+served from this droplet — same one-dir-per-site/pm2/nginx/certbot shape, just
+a different DNS zone and an apex vhost. `provision-site` takes `@` as the stub
+for the bare apex (server_name `<domain>` + `www.<domain>`, cert covering both,
+DNS A for `@` and `www`):
+
+  provision-site @ ivjames/boxoffice --domain boxo.show --dir /var/www/boxoffice
+
+Add the new domain as a DigitalOcean zone first (`doctl compute domain create
+<domain>`). `--no-www` drops the www half if you only want the apex.
+
+- **boxoffice** moved off `boxoffice.lab980.com` to its own **boxo.show** apex
+  (its own tenant subdomains + a `beta.boxo.show` staging deploy). It still
+  lives in `/var/www/boxoffice` on this box — see `boxoffice/DEPLOY.md`
+  ("Migrating boxoffice.lab980.com → boxo.show") for the full cutover runbook.
+
 ## Engineering lessons
 
 - Verify a CLEAN clone builds, not just the working tree:
