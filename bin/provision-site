@@ -18,6 +18,7 @@ IP=""
 DIR=""
 DO_DNS=1
 DO_TLS=1
+DO_WWW=1
 STUB=""
 REPO=""
 
@@ -33,18 +34,25 @@ lab980-provision — scaffold a new lab980 subdomain (DNS, dir, repo, nginx, TLS
 Usage:
   lab980-provision <stub> [repo] [options]
 
-  <stub>        subdomain label, e.g. "gigit"  ->  gigit.lab980.com
+  <stub>        subdomain label, e.g. "gigit"  ->  gigit.lab980.com;
+                or "@" for the bare apex domain (server_name <domain>, plus
+                www.<domain> unless --no-www).
   [repo]        git remote to clone: "owner/repo", a full https/ssh URL,
                 or omit to just create an empty site dir.
 
 Options:
   --domain D    base domain (default: lab980.com)
-  --dir PATH    app directory (default: /var/www/<stub>)
+  --dir PATH    app directory (default: /var/www/<stub>, or /var/www/<domain>
+                in apex mode)
   --port N      local port to reserve (default: next free from 8060)
   --ip IP       droplet public IP for DNS (default: auto via DO metadata)
   --no-dns      skip the DigitalOcean DNS record
   --no-tls      skip certbot (leave the site on :80)
+  --no-www      apex mode only: don't also provision www.<domain>
   -h, --help    this help
+
+  Apex example (e.g. moving a site to its own domain):
+    provision-site @ ivjames/boxoffice --domain boxo.show --dir /var/www/boxoffice
 
 Env:
   GITHUB_TOKEN  if set, used to clone private github.com repos over https.
@@ -62,6 +70,7 @@ while [ $# -gt 0 ]; do
     --ip)     IP="$2"; shift 2;;
     --no-dns) DO_DNS=0; shift;;
     --no-tls) DO_TLS=0; shift;;
+    --no-www) DO_WWW=0; shift;;
     -h|--help) usage; exit 0;;
     -*) die "unknown option: $1 (see --help)";;
     *) if [ -z "$STUB" ]; then STUB="$1"; elif [ -z "$REPO" ]; then REPO="$1"; else die "unexpected arg: $1"; fi; shift;;
@@ -71,8 +80,22 @@ done
 [ -n "$STUB" ] || { usage; exit 1; }
 [ "$(id -u)" -eq 0 ] || die "run as root."
 
-FQDN="$STUB.$DOMAIN"
-DIR="${DIR:-/var/www/$STUB}"
+# Apex mode: STUB "@" means the bare domain (server_name DOMAIN, plus
+# www.DOMAIN unless --no-www) rather than a <stub>.DOMAIN subdomain. The DNS
+# A record name for the apex is "@" in doctl.
+if [ "$STUB" = "@" ]; then
+  IS_APEX=1
+  FQDN="$DOMAIN"
+  RECORD_NAME="@"
+  DEFAULT_DIRNAME="$DOMAIN"
+else
+  IS_APEX=0
+  DO_WWW=0                        # www is an apex-only concern
+  FQDN="$STUB.$DOMAIN"
+  RECORD_NAME="$STUB"
+  DEFAULT_DIRNAME="$STUB"
+fi
+DIR="${DIR:-/var/www/$DEFAULT_DIRNAME}"
 
 log "Provisioning $FQDN  (dir: $DIR)"
 
@@ -85,15 +108,20 @@ fi
 if [ "$DO_DNS" -eq 1 ]; then
   command -v doctl >/dev/null || die "doctl not found (install/authenticate it, or pass --no-dns)."
   [ -n "$IP" ] || die "couldn't determine droplet IP for DNS; pass --ip."
-  existing="$(doctl compute domain records list "$DOMAIN" --no-header --format Type,Name,Data 2>/dev/null \
-              | awk -v n="$STUB" '$1=="A" && $2==n {print $3}' | head -1)"
-  if [ -n "$existing" ]; then
-    log "DNS: A $FQDN -> $existing already exists (leaving as-is)"
-  else
-    log "DNS: creating A $FQDN -> $IP (ttl 300)"
-    doctl compute domain records create "$DOMAIN" \
-      --record-type A --record-name "$STUB" --record-data "$IP" --record-ttl 300 >/dev/null
-  fi
+  ensure_a_record() {           # $1 = record name ("@"/"www"/stub), $2 = fqdn (for logs)
+    local rname="$1" rfqdn="$2" existing
+    existing="$(doctl compute domain records list "$DOMAIN" --no-header --format Type,Name,Data 2>/dev/null \
+                | awk -v n="$rname" '$1=="A" && $2==n {print $3}' | head -1)"
+    if [ -n "$existing" ]; then
+      log "DNS: A $rfqdn -> $existing already exists (leaving as-is)"
+    else
+      log "DNS: creating A $rfqdn -> $IP (ttl 300)"
+      doctl compute domain records create "$DOMAIN" \
+        --record-type A --record-name "$rname" --record-data "$IP" --record-ttl 300 >/dev/null
+    fi
+  }
+  ensure_a_record "$RECORD_NAME" "$FQDN"
+  [ "$DO_WWW" -eq 1 ] && ensure_a_record "www" "www.$DOMAIN"
 fi
 
 # ---- 2. app dir + 3. repo ----
@@ -144,11 +172,13 @@ if [ -f "$conf" ]; then
   log "nginx: $conf already exists (leaving as-is)"
 else
   log "nginx: writing $conf (proxy -> 127.0.0.1:$PORT)"
+  server_names="$FQDN"
+  [ "$DO_WWW" -eq 1 ] && server_names="$FQDN www.$DOMAIN"
   cat > "$conf" <<EOF
 server {
     listen 80;
     listen [::]:80;
-    server_name $FQDN;
+    server_name $server_names;
 
     location / {
         proxy_pass http://127.0.0.1:$PORT;
@@ -188,12 +218,14 @@ if [ "$DO_TLS" -eq 1 ]; then
         sleep 10
       done
     fi
+    cert_args=(-d "$FQDN")
+    [ "$DO_WWW" -eq 1 ] && cert_args+=(-d "www.$DOMAIN")
     if [ "$ok" -eq 1 ]; then
-      log "TLS: issuing cert for $FQDN"
-      certbot --nginx -d "$FQDN" --redirect -n
+      log "TLS: issuing cert for ${cert_args[*]//-d /}"
+      certbot --nginx "${cert_args[@]}" --redirect -n
     else
       warn "$FQDN not resolving to $IP yet (DNS still propagating)."
-      warn "Re-run TLS later:  certbot --nginx -d $FQDN --redirect -n"
+      warn "Re-run TLS later:  certbot --nginx ${cert_args[*]} --redirect -n"
     fi
   fi
 fi
