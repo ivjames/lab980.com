@@ -163,6 +163,17 @@ const projects = [
     links: []
   },
   {
+    id: 'argument-analyzer',
+    tag: 'AI · Python · Flask',
+    name: 'Argument Analyzer',
+    desc: "Paste two arguments side by side and watch a scrupulously neutral AI mark both of them up in red pen -- fallacies named, weak premises flagged, no winner declared. Styled like a legal pad because bad logic deserves formal documentation.",
+    status: 'active',
+    statusText: 'Live (somehow)',
+    detail: `Most argument tools online exist to help you win. This one exists to tell you where you're both wrong.\n\nYou paste in two opposing arguments -- yours and theirs, two pundits, two Reddit comments -- and Claude streams back a structured critique of each: logical fallacies with the offending phrases quoted, premises asserted without evidence, the one point that actually holds up, and a concrete suggestion for making the argument stronger rather than softer. It closes with a head-to-head paragraph comparing structural quality without crowning a winner.\n\nThe design leans skeuomorphic on purpose: aged paper, ruled lines, serif type, red-pen markup. It should feel like getting your debate brief back from a professor who did not enjoy it.\n\nFlask backend streaming Server-Sent Events from the Anthropic API, vanilla JS frontend rendering the markdown as it arrives. One Python file, one HTML file, no build step.`,
+    stack: ['Python', 'Flask', 'Anthropic API', 'HTML/CSS/JS'],
+    links: [{ label: 'Analyze an Argument', url: 'https://args.lab980.com' }]
+  },
+  {
     id: 'lab980',
     tag: 'Meta · HTML · CSS · JS',
     name: 'lab980.com',
