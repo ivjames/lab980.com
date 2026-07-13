@@ -9,6 +9,10 @@ All sites live on one Ubuntu droplet serving many `*.lab980.com` subdomains
 - Config + data in the app dir (local .env, data/ for SQLite), not /etc or /var/lib.
   No dedicated service user — apps run as root.
 - Process manager: pm2. One app per site on its own local port (8060+); pm2 save.
+  Reboot survival needs the boot hook installed ONCE per droplet
+  (`pm2 startup systemd -u root --hp /root`, then run the line it prints;
+  verify `systemctl is-enabled pm2-root` -> enabled). `pm2 save` alone only
+  writes the dump — nothing replays it at boot without the hook.
 - nginx per site: /etc/nginx/sites-available/<fqdn> symlinked to sites-enabled/,
   proxying to the app's local port.
 - TLS: per-site certbot (certbot --nginx -d <fqdn> --redirect), auto-renewed. No wildcard.
