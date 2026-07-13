@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+#
+# site-ports — READ-ONLY. Show the local ports already claimed by lab980 sites
+# (nginx proxy_pass targets + live listeners) and the next free 80xx port, so a
+# new site never lands on a running one. Run this BEFORE assigning a site's port
+# and wiring its pm2 config / nginx proxy_pass. Touches nothing.
+#
+#   site-ports
+#
+set -euo pipefail
+
+nginx_ports() {
+  grep -rhoE 'proxy_pass[^;]*:[0-9]+' /etc/nginx/sites-enabled/ 2>/dev/null \
+    | grep -oE '[0-9]+$' || true
+}
+listen_ports() {
+  ss -ltnH 2>/dev/null | awk '{print $4}' | grep -oE '[0-9]+$' || true
+}
+
+used="$( { nginx_ports; listen_ports; } | sort -un )"
+
+echo "== ports claimed by nginx proxy_pass (sites-enabled) =="
+nginx_ports | sort -un | sed 's/^/  /'
+echo
+echo "== ports currently LISTENing =="
+listen_ports | sort -un | sed 's/^/  /'
+echo
+
+# Next free port in the 8060+ site range.
+p=8060
+while printf '%s\n' "$used" | grep -qx "$p"; do p=$((p + 1)); done
+echo "next free site port (>=8060): $p"
+echo
+echo "Use it for BOTH the site's pm2 port and its nginx proxy_pass — they must match."
