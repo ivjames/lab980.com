@@ -28,9 +28,11 @@ PATH under its own name (once, on the droplet):
 
   ln -sf /var/www/lab980/bin/provision-site   /usr/local/bin/provision-site
   ln -sf /var/www/lab980/bin/deprovision-site /usr/local/bin/deprovision-site
+  ln -sf /var/www/lab980/bin/renew-certs      /usr/local/bin/renew-certs
 
   provision-site <stub> [repo]       # DO DNS + /var/www dir + repo clone + nginx + TLS
   deprovision-site <stub>            # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
+  renew-certs                        # renew any cert expiring within 2 days (see below)
 
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
@@ -52,6 +54,26 @@ Add the new domain as a DigitalOcean zone first (`doctl compute domain create
   (its own tenant subdomains + a `beta.boxo.show` staging deploy). It still
   lives in `/var/www/boxoffice` on this box — see `boxoffice/DEPLOY.md`
   ("Moving boxoffice to its own boxo.show domain") for the full cutover runbook.
+
+## Certificate renewal sweep
+
+certbot's own systemd timer already renews at the 30-day mark. `renew-certs`
+is a tighter, explicit backstop: it walks every cert under
+`/etc/letsencrypt/live/*`, reads each leaf's `notAfter` straight from
+`cert.pem`, isolates the ones expiring within the next N days (default 2), and
+runs `certbot renew --cert-name <name>` for each. Renewals go through the nginx
+installer, so nginx reloads with the fresh cert automatically.
+
+  renew-certs                  # sweep now: renew anything due within 2 days
+  renew-certs --days 5         # widen the window
+  renew-certs --dry-run        # simulate (certbot staging renewal, no replace)
+  renew-certs --force          # add --force-renewal (safe: we pre-filter)
+
+Install the cron once on the droplet (writes /etc/cron.d/lab980-renew-certs,
+a twice-daily 03:23/15:23 sweep logging to /var/log/lab980-renew-certs.log):
+
+  renew-certs --install-cron
+  renew-certs --uninstall-cron # remove it
 
 ## Engineering lessons
 
