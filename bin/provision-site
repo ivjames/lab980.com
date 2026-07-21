@@ -14,6 +14,7 @@ set -euo pipefail
 
 DOMAIN="lab980.com"
 PORT=""
+PORT_EXPLICIT=0
 IP=""
 DIR=""
 DO_DNS=1
@@ -66,7 +67,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --domain) DOMAIN="$2"; shift 2;;
     --dir)    DIR="$2"; shift 2;;
-    --port)   PORT="$2"; shift 2;;
+    --port)   PORT="$2"; PORT_EXPLICIT=1; shift 2;;
     --ip)     IP="$2"; shift 2;;
     --no-dns) DO_DNS=0; shift;;
     --no-tls) DO_TLS=0; shift;;
@@ -147,20 +148,53 @@ fi
 mkdir -p "$DIR/data"
 
 # ---- pick a local port ----
+# Read the PORT= value out of an .env file ($1), or nothing if absent/unset.
+port_from_env() {
+  [ -f "$1" ] || return 0
+  grep -E '^[[:space:]]*(export[[:space:]]+)?PORT=' "$1" \
+    | head -1 | sed 's/.*PORT=//' | tr -d '"'\'' \t\r'
+}
+
+# Ports already spoken for. Union THREE sources -- no single one is complete:
+#   1. live listeners (ss)          -- misses any app that's momentarily down.
+#   2. ports wired into nginx vhosts -- misses a site provisioned but not yet
+#      fronted, and only covers what's inlined as 127.0.0.1:<port>.
+#   3. PORT= in every OTHER site's /var/www/*/.env -- the authoritative record
+#      of what a site OWNS (config lives in the app dir, by convention). This is
+#      the one that was missing: a neighbour whose app isn't listening right now
+#      (crash, redeploy, or a reboot before the pm2 boot hook replays its dump)
+#      drops out of (1), and if the scan also doesn't catch it in (2) its port
+#      looks free -- so a new site grabs it and clobbers the neighbour when it
+#      comes back up. Sourcing owners' .env files closes that hole.
+listening="$(ss -ltn 2>/dev/null | awk 'NR>1{print $4}' | sed 's/.*://' | sort -u)"
+in_nginx="$(grep -rhoE '127\.0\.0\.1:[0-9]+' /etc/nginx/sites-available /etc/nginx/sites-enabled 2>/dev/null | sed 's/.*://' | sort -u)"
+in_envs=""
+for envf in /var/www/*/.env; do
+  [ -e "$envf" ] || continue                     # no matches -> literal glob
+  [ "$(dirname "$envf")" = "$DIR" ] && continue  # our own dir is handled below
+  p="$(port_from_env "$envf")"
+  [ -n "$p" ] && in_envs="$in_envs$p"$'\n'
+done
+taken="$(printf '%s\n%s\n%s\n' "$listening" "$in_nginx" "$in_envs" | sort -u)"
+
 # Re-provisioning an existing site dir (e.g. pointing a second/new domain at an
-# app that's already deployed): reuse the port already in its .env, so the new
-# vhost proxies to the SAME running app. Without this we'd pick a fresh free
-# port for the vhost while gunicorn keeps its old one -> nginx 502. An explicit
-# --port still wins.
+# app that's already deployed): reuse the port already in its OWN .env, so the
+# new vhost proxies to the SAME running app. Without this we'd pick a fresh free
+# port for the vhost while gunicorn keeps its old one -> nginx 502. That port
+# belongs to this dir (excluded from `taken` above), so reuse is never a
+# collision. An explicit --port still wins.
 if [ -z "$PORT" ] && [ -f "$DIR/.env" ]; then
-  PORT="$(grep -E '^[[:space:]]*(export[[:space:]]+)?PORT=' "$DIR/.env" \
-          | head -1 | sed 's/.*PORT=//' | tr -d '"'\'' \t\r')"
+  PORT="$(port_from_env "$DIR/.env")"
   [ -n "$PORT" ] && log "reusing existing port $PORT from $DIR/.env"
 fi
+
+# An explicit --port that another site already owns is an operator mistake --
+# fail loudly instead of standing up a second app on a taken port.
+if [ "$PORT_EXPLICIT" -eq 1 ] && printf '%s\n' "$taken" | grep -qx "$PORT"; then
+  die "port $PORT is already in use by another site (a live listener, an nginx vhost, or a /var/www/*/.env). Pass a free --port, or stop the conflicting site first."
+fi
+
 if [ -z "$PORT" ]; then
-  listening="$(ss -ltn 2>/dev/null | awk 'NR>1{print $4}' | sed 's/.*://' | sort -u)"
-  in_nginx="$(grep -rhoE '127\.0\.0\.1:[0-9]+' /etc/nginx/sites-available 2>/dev/null | sed 's/.*://' | sort -u)"
-  taken="$(printf '%s\n%s\n' "$listening" "$in_nginx")"
   for p in $(seq 8060 8099); do
     if ! printf '%s\n' "$taken" | grep -qx "$p"; then PORT="$p"; break; fi
   done
