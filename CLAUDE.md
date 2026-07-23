@@ -75,6 +75,32 @@ a twice-daily 03:23/15:23 sweep logging to /var/log/lab980-renew-certs.log):
   renew-certs --install-cron
   renew-certs --uninstall-cron # remove it
 
+## Credentials sweep
+
+API keys should never sit in `/etc/environment` (world-readable 644, and
+services/cron don't inherit it anyway) — each consumer gets its own
+`chmod 600` source instead. `credentials-sweep` finds and fixes stragglers:
+
+  credentials-sweep scan                        # read-only: what's where
+  credentials-sweep migrate /path/to/consumer    # move keys out of /etc/environment
+  credentials-sweep migrate /path/to/consumer --dry-run
+  credentials-sweep verify  /path/to/consumer    # confirm the migration held
+
+`scan` greps `/etc /home /srv /opt /root /var/www` for the tracked key names
+(default: `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `MISTRAL_API_KEY`,
+`GEMINI_API_KEY` — override with `--keys`) and lists which systemd units
+already scope a key via their own `EnvironmentFile=`. A name match isn't a
+verdict — a service reading from its own scoped file is already fine; only
+something falling through to the global environment needs `migrate`.
+
+`migrate <dir>` pulls the tracked keys out of `/etc/environment` into
+`<dir>/.env` (merged with whatever's already there, chmod 600), makes sure
+`<dir>/.gitignore` won't let it leak, backs up `/etc/environment` to
+`/root/environment.bak.<timestamp>`, then strips those lines from it.
+Existing login shells keep the old values until re-login. Rotating the keys
+in each provider console afterward is recommended, not automated — they sat
+world-readable until the migration.
+
 ## Engineering lessons
 
 - Verify a CLEAN clone builds, not just the working tree:
