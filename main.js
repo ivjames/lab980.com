@@ -1,188 +1,58 @@
 const projects = [
   {
-    id: 'photo-studio',
-    tag: 'Web · Python · Self-Hosted',
-    name: 'Photo Studio',
-    desc: 'Drag crop boxes over a flatbed scan, get straightened, tagged photos out. The MVP that grew up into CapCrop.',
-    status: 'active',
-    statusText: 'Alive, but private now',
-    detail: `Photo Studio started as a personal problem: a shoebox of old prints with no good way to digitize them without paying for a service or doing it manually one by one.\n\nThe app runs locally on your own machine. You load a flatbed scan, drag crop handles over each individual photo in the scan, and the app extracts, straightens, and deskews them automatically. Results go into tagged folders. When you're done, export everything as a zip.\n\nBuilt with Python on the backend and a browser-based frontend. No cloud, no subscription, no uploading your family photos to someone else's server.\n\nIt did its job so well it earned a sequel: CapCrop is the productized version, and Photo Studio now lives quietly behind a login.`,
-    stack: ['Python', 'Flask', 'OpenCV', 'HTML/CSS/JS'],
-    links: []
-  },
-  {
     id: 'capcrop',
     tag: 'SaaS · Python · AI',
     name: 'CapCrop',
-    desc: 'The shoebox-of-prints problem solved as a real product: batch-scan, auto-crop, straighten, restore, tag. "Rescue every photo from the scanner bed."',
+    desc: 'Batch photo digitization as a product: drop in a flatbed scan of several prints and get each one auto-cropped, straightened, restored, and tagged. "Rescue every photo from the scanner bed."',
     status: 'wip',
-    statusText: 'Private Beta -- 2026',
-    detail: `CapCrop is what happens when Photo Studio grows up. That one was the MVP -- enough to prove the shoebox-of-prints problem was worth solving. CapCrop is the same idea rebuilt as a real product, on the same Python foundation, with its own domain and an actual tagline: "rescue every photo from the scanner bed."\n\nDrop in a flatbed scan with several photos on it and CapCrop pulls each one out by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film. AI handles captions and tag suggestions, but only when you ask it to, and you can bring your own API key.\n\nEverything exports as organized, fully-backed-up ZIPs, sorted into folders. Your photos are never used to train anything, and you can export or delete all of it whenever you want.\n\nPrivate beta in 2026. Early-access signup is live -- which, as of right now, is the move.`,
+    statusText: 'Private beta -- 2026',
+    detail: `CapCrop turns a shoebox of old prints into an organized digital archive. Drop in a flatbed scan holding several photos and it extracts each one by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film.\n\nAI handles caption and tag suggestions on demand, and you can bring your own API key. Everything exports as organized, fully-backed-up ZIPs sorted into folders. Photos are never used to train anything, and you can export or delete all of your data at any time.\n\nThe product grew out of Photo Studio, an earlier self-hosted MVP that proved the problem was worth solving. CapCrop is that idea rebuilt as a real product on the same computer-vision foundation, with its own domain and a clear promise: rescue every photo from the scanner bed.\n\nCapCrop is in private beta for 2026, with early-access signups open now.`,
     stack: ['Python', 'Flask', 'OpenCV', 'AI Restoration', 'HTML/CSS/JS'],
     links: [{ label: 'Early Access', url: 'https://capcrop.com' }]
-  },
-  {
-    id: 'atheismiq',
-    tag: 'Web · Next.js · Postgres',
-    name: 'AtheismIQ',
-    desc: 'A quiz that finds out what you actually know about atheism. You get a score, a named position, and a share card generated on the fly.',
-    status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `AtheismIQ is a shareable quiz app about atheism -- the terminology, the misconceptions, and where you actually land on the belief/knowledge axes.\n\nTwo intake questions place you on the grid (agnostic atheist, gnostic theist, and so on), then the quiz tests you on the things people get wrong most. Instant scoring, an answer-review modal with sourced explanations, and a leaderboard.\n\nEvery result gets its own shareable URL with a dynamically generated Open Graph card -- rendered in-house with next/og, no external image service. Player types are stored as two boolean flags, which makes for a fun stats query: right/wrong rates broken down by who's answering.\n\nSeeding is idempotent, so redeploys never wipe anyone's results. Small detail, hard-won.`,
-    stack: ['Next.js 15', 'TypeScript', 'Prisma', 'PostgreSQL', 'Tailwind'],
-    links: [{ label: 'Take the Quiz', url: 'https://atheismiq.lab980.com' }]
-  },
-  {
-    id: 'artificial-atheist',
-    tag: 'AI · Eleventy · Autonomous',
-    name: 'Artificial Atheist',
-    desc: 'A publication that writes itself: every other day, Claude picks a topic, writes the article, illustrates it, and ships it. No human in the loop.',
-    status: 'active',
-    statusText: 'Live & self-publishing',
-    detail: `Artificial Atheist is an AI-authored publication on atheism, skepticism, and critical thinking -- and the whole editorial pipeline is a scheduled GitHub Action.\n\nEvery other day the generator inventories what's already been published, picks the least-covered topic, asks Claude for an article with a genuinely new angle (titles are deduped against the archive), generates an AI illustration, and commits Markdown. The commit triggers a static rebuild and the piece is live. Nobody touched anything.\n\nWhen I do want a say, there's a local human-in-the-loop "Studio" for steering an article from a seed idea. There's also an A/B harness that runs the same prompt through every AI provider I have keys for and logs latency and word count -- the generator itself is provider-agnostic.\n\nCurrent work: wiring it up to push new posts to Facebook automatically, because a publication that writes itself should market itself too.`,
-    stack: ['Eleventy', 'Node', 'Claude API', 'OpenAI Images', 'GitHub Actions'],
-    links: [{ label: 'Read It', url: 'https://artificialatheist.com' }]
-  },
-  {
-    id: 'mbw',
-    tag: 'Web · Node · SQLite',
-    name: 'Marketing Buzzworthy',
-    desc: 'A complete marketing-site demo for a company that folded before launch. The code outlived the business case.',
-    status: 'active',
-    statusText: 'Live Demo',
-    detail: `Marketing Buzzworthy was a demo site commissioned by a marketing company as a proof of concept for a client-facing product. The company folded before it shipped.\n\nThe site itself is a complete multipage frontend -- home, services, about, contact -- with a Node backend handling contact form submissions. Those submissions land in a SQLite-backed admin mailbox with read/unread state and delete. One-command production deploy script included.\n\nIt's a solid reference implementation for anyone building a small marketing site with a real backend. The code is cleaner than the business case was.\n\nIt's live and browsable at its subdomain as a working technical demo.`,
-    stack: ['Node.js', 'Express', 'SQLite', 'Vanilla JS', 'Nginx'],
-    links: [
-      { label: 'Live Demo', url: 'https://mbw.lab980.com' },
-      { label: 'GitHub', url: 'https://github.com/ivjames/MBW' }
-    ]
-  },
-  {
-    id: 'lucky-felt',
-    tag: 'Web · React · Express',
-    name: 'Lucky Felt Casino',
-    desc: "Hold'em, roulette, craps, sic bo, and three slots -- no real money, but every outcome is still decided server-side. Trust no browser.",
-    status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `Lucky Felt Casino is a fully functional browser casino with zero real money involved -- and a security model that pretends otherwise.\n\nGames: Texas Hold'em poker with full betting rounds, Roulette with inside and outside bets, Craps, Sic Bo, and three slot machines with different volatility profiles.\n\nThe frontend never decides anything that matters. All money-deciding randomness runs server-side through crypto.randomInt, payout tables live on the server as the single source of truth, every bet is validated, and poker hole cards stay server-side until showdown. If you can cheat it from the browser, that's a bug report I want.\n\nAccounts are email-based and passwordless: hashed, single-use, expiring 6-digit codes and bearer-token sessions, with rate limiting on the endpoints that need it. React + Vite up front, Express + SQLite behind.`,
-    stack: ['React', 'Vite', 'Express', 'SQLite', 'Nodemailer'],
-    links: [
-      { label: 'Play Now', url: 'https://casino.lab980.com' },
-      { label: 'GitHub', url: 'https://github.com/ivjames/lucky-felt' }
-    ]
-  },
-  {
-    id: 'pillow-polygons',
-    tag: 'Web · Python · AI',
-    name: 'Pillow Polygons',
-    desc: 'Type a prompt, get low-poly geometric art back as SVG or PNG. Named after the Python imaging library, not a throw cushion.',
-    status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `Pillow Polygons turns a text prompt into low-poly geometric art. Describe what you want, pick which Claude model does the thinking -- Haiku, Sonnet, or Opus -- and it generates the piece as scalable SVG or a flat PNG.\n\nThe name is a Python joke: it runs on Pillow, the imaging library, not a soft furnishing. Hand it a reference image and it samples a palette straight off it, so the output matches whatever vibe you're chasing.\n\nHere's the actual trick: Claude doesn't return an image, it returns Python drawing code. A renderer runs that code against Pillow for the raster PNG and a parallel SVG recorder for the vector version, so one generation gives you matching PNG and SVG. Seeds make any result reproducible, and everything lands in a SQLite gallery with folders and tags.\n\nIt makes genuinely nice wallpapers. That's the entire pitch.`,
-    stack: ['Python', 'Flask', 'Pillow', 'Anthropic API', 'SQLite'],
-    links: [{ label: 'Live Site', url: 'https://poly.lab980.com' }]
-  },
-  {
-    id: 'qa-ksink',
-    tag: 'Web · Python · Test Automation',
-    name: 'QA KSink',
-    desc: 'A demo app built to be tested, and the Playwright bot that tests it -- in a visible browser you can actually watch work.',
-    status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `QA KSink is two repos that only make sense together: a "kitchen sink" web app that exists purely to be the system under test, and a bot that exercises every scenario in it.\n\nThe target app is a React + Vite frontend over a FastAPI and SQLite backend -- forms, flows, auth, edge cases, and a documented scenario matrix of things that should (and pointedly should not) work. The bot drives it with Playwright under pytest, and instead of running headless it runs visible on purpose: the dashboard streams the live browser feed so you can actually watch it click through everything in real time, then spits out an HTML report of what passed and what didn't.\n\nThe dashboard itself is a small FastAPI service (/api/run, /api/status, /api/log) wrapped around the test run. The whole thing started as an excuse to practice test-automation tooling without a real app to break -- so building the breakable app became half the project.`,
-    stack: ['Python', 'Playwright', 'Pytest', 'FastAPI', 'React'],
-    links: [
-      { label: 'Bot Dashboard', url: 'https://qa-bot.lab980.com' },
-      { label: 'Target Site', url: 'https://qa-demo.lab980.com' }
-    ]
-  },
-  {
-    id: 'toulmin',
-    tag: 'Web · Python · Education',
-    name: 'Toulmin',
-    desc: "Build an argument the Toulmin way -- claim, grounds, warrant and all -- and watch the diagram expose the parts you're dodging.",
-    status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `Toulmin is a small web app for building and visualizing arguments using Stephen Toulmin's model of argumentation -- the six-part structure debate students learn and everyone else argues without.\n\nYou break an argument into claim, grounds, warrant, backing, qualifier, and rebuttal. A completeness meter shows which parts you're still missing (the warrant, it's always the warrant), and the result renders as a proper Toulmin diagram with a print/PDF view.\n\nArguments export and import as JSON -- invalid items are skipped, not fatal -- and there's a seed CLI loaded with classic example arguments. Dark mode follows your system preference.\n\nUnder the hood: a single-file Flask app with SQLite and zero build step, tested with pytest for the API and a Playwright browser test that runs a full real-user flow against a throwaway database, across Python 3.9 through 3.12 in CI.`,
-    stack: ['Python', 'Flask', 'SQLite', 'Vanilla JS'],
-    links: [{ label: 'Build an Argument', url: 'https://toulmin.lab980.com' }]
-  },
-  {
-    id: 'gigit',
-    tag: 'SaaS · Next.js · Scheduling',
-    name: 'Gigit',
-    desc: 'Gig scheduling for talent agents with one hard rule: double-booking is impossible. The engine says no so you don\'t have to.',
-    status: 'wip',
-    statusText: 'Built, not launched',
-    detail: `Gigit is agent-first gig scheduling: talent agents book pros onto gigs, and the app's entire reason for existing is that it will not let two confirmed bookings overlap. Ever.\n\nThe scheduling engine is pure and unit-tested -- half-open interval overlap, absolute instants plus a per-gig IANA timezone so cross-timezone conflicts are caught DST-correctly. It checks all of a pro's confirmed bookings regardless of which agent owns the gig, but rival agents never see each other's business: foreign gigs are redacted down to "booked elsewhere," even inside the error messages.\n\nAround the engine: an openings board where pros raise their hand for roles, two-way iCalendar interop including a token-based subscription feed, bulk import from CSV, spreadsheets, or .ics, and a geocoding location picker that makes you choose a candidate instead of trusting the top match. Distances show in miles for US venues and km elsewhere, because details matter.\n\nFully built and running in the lab. Launching is a different project.`,
-    stack: ['Next.js 15', 'TypeScript', 'Prisma', 'SQLite', 'Tailwind'],
-    links: []
   },
   {
     id: 'boxo-show',
     tag: 'SaaS · Django · Stripe',
     name: 'Boxo.show',
-    desc: 'White-label box office: one deployment, many branded theaters -- Stripe checkout, QR tickets, and a door scanner that reads several at once.',
+    desc: 'White-label box office: one deployment, many independently branded theaters -- storefront, Stripe checkout, emailed QR tickets, and a door scanner that reads several tickets in a single camera frame.',
     status: 'wip',
-    statusText: 'In development',
-    detail: `Boxo.show is what happens after you rebuild two real theatre websites and realize every venue needs the same thing: a storefront, a checkout, and a way to scan tickets at the door.\n\nIt's a multi-tenant Django platform -- one deployment, many branded theaters. Tenants resolve from the subdomain, branding is per-tenant CSS custom properties, and staff roles are a cumulative hierarchy from owner down to scanner. The public side goes browse, buy, Stripe checkout, emailed QR ticket; the staff side manages events, orders, and the door.\n\nThe door scanner is the fun part: it runs in the browser and can pick apart multiple QR codes in one camera frame -- finder-pattern counting, overlapping-half decoding, analysis cropped to what's actually on screen. Nobody at a will-call table holds tickets up one at a time.\n\nIn active development. Not on the internet yet, on purpose.`,
+    statusText: 'In active development',
+    detail: `Boxo.show is a multi-tenant ticketing platform for live venues: one deployment serving many independently branded theaters. Tenants resolve from the subdomain, branding is per-tenant, and staff roles form a cumulative hierarchy from owner down to door scanner.\n\nThe public side runs browse, buy, Stripe checkout, and an emailed QR ticket. The staff side manages events, orders, and the door. Each venue keeps its own catalog, orders, and branding fully isolated from every other tenant on the platform.\n\nThe door scanner runs entirely in the browser and can decode multiple QR codes in a single camera frame -- finder-pattern counting, overlapping-half decoding, and analysis cropped to what's actually on screen -- so a will-call table isn't scanning tickets one at a time.\n\nBoxo.show is in active development, built on the experience of shipping two production theatre sites.`,
     stack: ['Django', 'PostgreSQL', 'Stripe', 'Alpine.js'],
     links: []
   },
   {
-    id: 'bonita',
-    tag: 'Client · Static · Accessibility',
-    name: 'Bonita Center for the Arts',
-    desc: 'Real client work: migrating a 701-seat theatre off Wix, starting with the audit that found 26 accessibility violations.',
-    status: 'wip',
-    statusText: 'Migration in progress',
-    detail: `The Bonita Center for the Arts is a real 701-seat venue with a real website problem: a Wix site with 26 WCAG violations found by an axe-core audit -- unlabeled form fields, missing H1s, around forty misused heading tags.\n\nThe rebuild is deliberately boring in the best way: plain static HTML and CSS, no build step, no third-party requests, not even an external font (it's self-hosted). Shared page chrome is generated into partials and assembled by nginx server-side includes at request time.\n\nStaff get an events admin with live preview that saves straight to the site through a backend written in nothing but the Node standard library -- scrypt-hashed accounts, form intake, events storage. Structured data marks the venue up properly for search.\n\nThe audit tooling itself is part of the project: a headless-Chromium crawler running axe-core against every page, so "accessible" is a measured claim, not a vibe.`,
-    stack: ['HTML/CSS', 'nginx SSI', 'Node (stdlib)', 'axe-core'],
-    links: [{ label: 'Staging Rebuild', url: 'https://bonita.lab980.com' }]
-  },
-  {
-    id: 'highlander',
-    tag: 'Client · Static · Design',
-    name: 'Highlander Auditorium',
-    desc: 'A truthful redesign for a 1,073-seat auditorium: invented claims out, palette sampled from their actual stage lighting.',
-    status: 'wip',
-    statusText: 'Redesign delivered',
-    detail: `Highlander Auditorium is a 1,073-seat proscenium theatre run by a school district, and its redesign started with subtraction: content that couldn't be verified -- including an invented events season -- came out before anything new went in.\n\nWhat went in is fast and honest. Static multi-page HTML with no framework and no build step. Zero third-party requests except a map embed: even the weather widget is a custom UI hitting a keyless, CORS-friendly forecast API client-side, and it hides itself on failure so it can never look broken.\n\nThe design details were archaeology. The venue's logo existed only as a raster image, so it was reconstructed as a clean SVG. The accent color was sampled from photos of their actual stage-wash lighting. Fonts are self-hosted variable fonts, subset down to about 100KB total.\n\nDelivered as a complete handoff -- including an honest open-items list of everything still unverified, down to a ZIP code discrepancy.`,
-    stack: ['HTML/CSS/JS', 'Open-Meteo', 'nginx'],
-    links: []
-  },
-  {
-    id: 'burner-map',
-    tag: 'Maps · ???',
-    name: 'Burner Map',
-    desc: "A map app. For burners. It exists, it's in the lab, and that's all you're getting for now.",
-    status: 'wip',
-    statusText: 'Under wraps',
-    detail: `There is a map. There are burners. The two are being introduced to each other in the lab right now.\n\nDetails when it's ready. Or when it isn't, which is also a proud lab980 tradition.`,
-    stack: ['TBD'],
-    links: []
-  },
-  {
-    id: 'argument-analyzer',
-    tag: 'AI · Python · Flask',
-    name: 'Argument Analyzer',
-    desc: 'Paste two opposing arguments and a scrupulously neutral AI marks both up in red pen. No winner declared.',
+    id: 'fec-platform',
+    tag: 'SaaS · Multi-tenant · White-label',
+    name: 'FEC Platform',
+    desc: 'A multi-tenant, white-label platform for family entertainment centers: one deployment serving many independently branded operators, each on their own subdomain.',
     status: 'active',
-    statusText: 'Live (somehow)',
-    detail: `Most argument tools online exist to help you win. This one exists to tell you where you're both wrong.\n\nYou paste in two opposing arguments -- yours and theirs, two pundits, two Reddit comments -- and Claude streams back a structured critique of each: logical fallacies with the offending phrases quoted, premises asserted without evidence, the one point that actually holds up, and a concrete suggestion for making the argument stronger rather than softer. It closes with a head-to-head paragraph comparing structural quality without crowning a winner.\n\nThe design leans skeuomorphic on purpose: aged paper, ruled lines, serif type, red-pen markup. It should feel like getting your debate brief back from a professor who did not enjoy it.\n\nFlask backend streaming Server-Sent Events from the Anthropic API, vanilla JS frontend rendering the markdown as it arrives. One Python file, one HTML file, no build step.`,
-    stack: ['Python', 'Flask', 'Anthropic API', 'HTML/CSS/JS'],
-    links: [{ label: 'Analyze an Argument', url: 'https://args.lab980.com' }]
+    statusText: 'Live',
+    detail: `FEC Platform is a white-label web platform for family entertainment centers -- arcades, activity parks, and the mixed-attraction venues in between. It runs as a single multi-tenant deployment that serves many operators, each as an independently branded tenant.\n\nTenants resolve from their own subdomain, and every operator gets its own branding while sharing one codebase and one deployment. Adding a venue is an onboarding step, not a new build, so the platform scales across operators without forking per venue.\n\nThe multi-tenant, white-label architecture keeps each operator's presence fully separated while a single team maintains one system underneath.\n\nFEC Platform is live in production.`,
+    stack: ['Multi-tenant', 'White-label', 'Web Platform'],
+    links: [{ label: 'Live Site', url: 'https://ffc.lab980.com' }]
   },
   {
-    id: 'lab980',
-    tag: 'Meta · HTML · CSS · JS',
-    name: 'lab980.com',
-    desc: "The site you're looking at. Perpetually one project away from being finished.",
+    id: 'gigit',
+    tag: 'SaaS · Next.js · Scheduling',
+    name: 'Gigit',
+    desc: 'Agent-first gig scheduling with one guarantee: two confirmed bookings can never overlap. A pure, unit-tested engine enforces it across agents and timezones.',
     status: 'wip',
-    statusText: 'In Progress (obviously)',
-    detail: `This site is itself a project worth documenting.\n\nIt started as a "coming soon" page and grew into a full showcase during a single long session -- design direction, copy, structure, and deployment all figured out in conversation with Claude.\n\nThe stack is deliberately simple: plain HTML, CSS, and vanilla JS. No framework, no build step, no node_modules. It serves fast, it deploys with a heredoc, and it's editable from an iPad over SSH.\n\nThe workflow: Working Copy on iPad for git, Termius for SSH, Claude for pair programming. The droplet runs nginx with certbot for SSL. Each project gets its own subdomain and nginx config -- the real project was the nginx configs we made along the way.\n\nIt's never going to be "done." That's the point.`,
-    stack: ['HTML', 'CSS', 'Vanilla JS', 'Nginx', 'DigitalOcean'],
-    links: [{ label: 'GitHub', url: 'https://github.com/ivjames/lab980.com' }]
+    statusText: 'Built -- pre-launch',
+    detail: `Gigit is scheduling software for talent agents booking professionals onto gigs. Its core guarantee is simple and absolute: two confirmed bookings for the same pro can never overlap.\n\nThe scheduling engine is pure and unit-tested -- half-open interval overlap on absolute instants, with a per-gig IANA timezone so cross-timezone conflicts are caught DST-correctly. It checks all of a pro's confirmed bookings regardless of which agent owns the gig, while keeping agents isolated from one another: a rival's gigs are redacted to "booked elsewhere," even inside error messages.\n\nAround the engine sit an openings board where pros raise their hand for roles, two-way iCalendar interop including a token-based subscription feed, bulk import from CSV, spreadsheets, or .ics, and a geocoding location picker that requires choosing a specific candidate rather than trusting the top match. Distances render in miles for US venues and kilometers elsewhere.\n\nGigit is fully built and running, ahead of a public launch.`,
+    stack: ['Next.js 15', 'TypeScript', 'Prisma', 'SQLite', 'Tailwind'],
+    links: []
+  },
+  {
+    id: 'artificial-atheist',
+    tag: 'AI · Eleventy · Autonomous',
+    name: 'Artificial Atheist',
+    desc: 'A self-operating publication on atheism, skepticism, and critical thinking: an autonomous AI pipeline picks a topic, writes the article, illustrates it, and ships it -- no human in the loop.',
+    status: 'active',
+    statusText: 'Live -- self-publishing',
+    detail: `Artificial Atheist is an AI-authored publication on atheism, skepticism, and critical thinking, and its entire editorial pipeline runs as a scheduled GitHub Action.\n\nOn a recurring schedule, the generator inventories what has already been published, selects the least-covered topic, and commissions an article with a genuinely new angle -- titles are deduplicated against the archive. It generates an accompanying illustration and commits Markdown, which triggers a static rebuild that puts the piece live, end to end, with no manual step.\n\nA local human-in-the-loop studio is available for steering an article from a seed idea, and an A/B harness runs the same prompt across multiple AI providers to compare latency and output -- the generator itself is provider-agnostic.\n\nThe brand also spans AtheismIQ, a shareable knowledge quiz that places players on the belief/knowledge axes and scores them against the concepts people most often get wrong -- now part of the Artificial Atheist property.`,
+    stack: ['Eleventy', 'Node', 'Claude API', 'OpenAI Images', 'GitHub Actions'],
+    links: [{ label: 'Read It', url: 'https://artificialatheist.com' }]
   }
 ];
 
@@ -368,7 +238,7 @@ function closeModal() {
 }
 
 // ─── SCROLL ───────────────────────────────────────────────
-document.querySelector('.cta-secondary').addEventListener('click', function(e) {
+document.querySelector('.cta-primary').addEventListener('click', function(e) {
   e.preventDefault();
   document.getElementById('projects').scrollIntoView({ behavior: 'smooth' });
 });
