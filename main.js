@@ -8,7 +8,7 @@ const projects = [
     statusText: 'Private beta -- 2026',
     detail: `CapCrop turns a shoebox of old prints into an organized digital archive. Drop in a flatbed scan holding several photos and it extracts each one by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film.\n\nAI handles caption and tag suggestions on demand, and you can bring your own API key. Everything exports as organized, fully-backed-up ZIPs sorted into folders. Photos are never used to train anything, and you can export or delete all of your data at any time.\n\nThe product grew out of Photo Studio, an earlier self-hosted MVP that proved the problem was worth solving. CapCrop is that idea rebuilt as a real product on the same computer-vision foundation, with its own domain and a clear promise: rescue every photo from the scanner bed.\n\nCapCrop is in private beta for 2026, with early-access signups open now.`,
     stack: ['Python', 'Flask', 'OpenCV', 'AI Restoration', 'HTML/CSS/JS'],
-    links: [{ label: 'Early Access', url: 'https://capcrop.com' }]
+    links: []
   },
   {
     id: 'boxo-show',
@@ -30,7 +30,7 @@ const projects = [
     statusText: 'In alpha',
     detail: `FEC Platform is a white-label web platform for family entertainment centers -- arcades, activity parks, and the mixed-attraction venues in between. It runs as a single multi-tenant deployment that serves many operators, each as an independently branded tenant.\n\nTenants resolve from their own subdomain, and every operator gets its own branding while sharing one codebase and one deployment. Adding a venue is an onboarding step, not a new build, so the platform scales across operators without forking per venue.\n\nThe multi-tenant, white-label architecture keeps each operator's presence fully separated while a single team maintains one system underneath.\n\nFEC Platform is in alpha.`,
     stack: ['Multi-tenant', 'White-label', 'Web Platform'],
-    links: [{ label: 'Alpha Preview', url: 'https://ffc.lab980.com' }]
+    links: []
   },
   {
     id: 'gigit',
