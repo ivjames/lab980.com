@@ -16,8 +16,8 @@ const projects = [
     name: 'Boxo.show',
     desc: 'White-label box office: one deployment, many independently branded theaters -- storefront, Stripe checkout, emailed QR tickets, and a door scanner that reads several tickets in a single camera frame.',
     status: 'wip',
-    statusText: 'In active development',
-    detail: `Boxo.show is a multi-tenant ticketing platform for live venues: one deployment serving many independently branded theaters. Tenants resolve from the subdomain, branding is per-tenant, and staff roles form a cumulative hierarchy from owner down to door scanner.\n\nThe public side runs browse, buy, Stripe checkout, and an emailed QR ticket. The staff side manages events, orders, and the door. Each venue keeps its own catalog, orders, and branding fully isolated from every other tenant on the platform.\n\nThe door scanner runs entirely in the browser and can decode multiple QR codes in a single camera frame -- finder-pattern counting, overlapping-half decoding, and analysis cropped to what's actually on screen -- so a will-call table isn't scanning tickets one at a time.\n\nBoxo.show is in active development, built on the experience of shipping two production theatre sites.`,
+    statusText: 'Pre-launch beta',
+    detail: `Boxo.show is a multi-tenant ticketing platform for live venues: one deployment serving many independently branded theaters. Tenants resolve from the subdomain, branding is per-tenant, and staff roles form a cumulative hierarchy from owner down to door scanner.\n\nThe public side runs browse, buy, Stripe checkout, and an emailed QR ticket. The staff side manages events, orders, and the door. Each venue keeps its own catalog, orders, and branding fully isolated from every other tenant on the platform.\n\nThe door scanner runs entirely in the browser and can decode multiple QR codes in a single camera frame -- finder-pattern counting, overlapping-half decoding, and analysis cropped to what's actually on screen -- so a will-call table isn't scanning tickets one at a time.\n\nBoxo.show is in pre-launch beta, built on the experience of shipping two production theatre sites.`,
     stack: ['Django', 'PostgreSQL', 'Stripe', 'Alpine.js'],
     links: []
   },
@@ -26,11 +26,11 @@ const projects = [
     tag: 'SaaS · Multi-tenant · White-label',
     name: 'FEC Platform',
     desc: 'A multi-tenant, white-label platform for family entertainment centers: one deployment serving many independently branded operators, each on their own subdomain.',
-    status: 'active',
-    statusText: 'Live',
-    detail: `FEC Platform is a white-label web platform for family entertainment centers -- arcades, activity parks, and the mixed-attraction venues in between. It runs as a single multi-tenant deployment that serves many operators, each as an independently branded tenant.\n\nTenants resolve from their own subdomain, and every operator gets its own branding while sharing one codebase and one deployment. Adding a venue is an onboarding step, not a new build, so the platform scales across operators without forking per venue.\n\nThe multi-tenant, white-label architecture keeps each operator's presence fully separated while a single team maintains one system underneath.\n\nFEC Platform is live in production.`,
+    status: 'wip',
+    statusText: 'In alpha',
+    detail: `FEC Platform is a white-label web platform for family entertainment centers -- arcades, activity parks, and the mixed-attraction venues in between. It runs as a single multi-tenant deployment that serves many operators, each as an independently branded tenant.\n\nTenants resolve from their own subdomain, and every operator gets its own branding while sharing one codebase and one deployment. Adding a venue is an onboarding step, not a new build, so the platform scales across operators without forking per venue.\n\nThe multi-tenant, white-label architecture keeps each operator's presence fully separated while a single team maintains one system underneath.\n\nFEC Platform is in alpha.`,
     stack: ['Multi-tenant', 'White-label', 'Web Platform'],
-    links: [{ label: 'Live Site', url: 'https://ffc.lab980.com' }]
+    links: [{ label: 'Alpha Preview', url: 'https://ffc.lab980.com' }]
   },
   {
     id: 'gigit',
