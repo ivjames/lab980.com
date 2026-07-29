@@ -528,6 +528,25 @@ section {
 
 .modal-close:hover { color: var(--white); border-color: var(--white); }
 
+.modal-figure {
+ margin-bottom: 32px;
+ border: 1px solid var(--border);
+ background: var(--black);
+ overflow: hidden;
+ line-height: 0;
+}
+
+.modal-figure[hidden] { display: none; }
+
+.modal-shot {
+ display: block;
+ width: 100%;
+ height: auto;
+ aspect-ratio: 16 / 9;
+ object-fit: cover;
+ object-position: top center;
+}
+
 .modal-detail {
  border-top: 1px solid var(--border);
  padding-top: 28px;

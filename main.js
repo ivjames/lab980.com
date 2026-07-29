@@ -6,6 +6,8 @@ const projects = [
     desc: 'Batch photo digitization as a product: drop in a flatbed scan of several prints and get each one auto-cropped, straightened, restored, and tagged. "Rescue every photo from the scanner bed."',
     status: 'wip',
     statusText: 'Private beta -- 2026',
+    image: 'images/capcrop.jpg?v=20260729',
+    imageAlt: 'CapCrop homepage: "Rescue every photo from the scanner bed."',
     detail: `CapCrop turns a shoebox of old prints into an organized digital archive. Drop in a flatbed scan holding several photos and it extracts each one by bounding box, straightens it, and cleans it up -- fading, dust, and scratch removal, plus color-negative inversion for film.\n\nAI handles caption and tag suggestions on demand, and you can bring your own API key. Everything exports as organized, fully-backed-up ZIPs sorted into folders. Photos are never used to train anything, and you can export or delete all of your data at any time.\n\nThe product grew out of Photo Studio, an earlier self-hosted MVP that proved the problem was worth solving. CapCrop is that idea rebuilt as a real product on the same computer-vision foundation, with its own domain and a clear promise: rescue every photo from the scanner bed.\n\nCapCrop is in private beta for 2026, with early-access signups open now.`,
     stack: ['Python', 'Flask', 'OpenCV', 'AI Restoration', 'HTML/CSS/JS'],
     links: []
@@ -17,6 +19,8 @@ const projects = [
     desc: 'White-label box office: one deployment, many independently branded theaters -- storefront, Stripe checkout, emailed QR tickets, and a door scanner that reads several tickets in a single camera frame.',
     status: 'wip',
     statusText: 'Pre-launch beta',
+    image: 'images/boxo-show.jpg?v=20260729',
+    imageAlt: 'Boxo.show homepage: "Sell tickets under your own name."',
     detail: `Boxo.show is a multi-tenant ticketing platform for live venues: one deployment serving many independently branded theaters. Tenants resolve from the subdomain, branding is per-tenant, and staff roles form a cumulative hierarchy from owner down to door scanner.\n\nThe public side runs browse, buy, Stripe checkout, and an emailed QR ticket. The staff side manages events, orders, and the door. Each venue keeps its own catalog, orders, and branding fully isolated from every other tenant on the platform.\n\nThe door scanner runs entirely in the browser and can decode multiple QR codes in a single camera frame -- finder-pattern counting, overlapping-half decoding, and analysis cropped to what's actually on screen -- so a will-call table isn't scanning tickets one at a time.\n\nBoxo.show is in pre-launch beta, built on the experience of shipping two production theatre sites.`,
     stack: ['Django', 'PostgreSQL', 'Stripe', 'Alpine.js'],
     links: []
@@ -39,6 +43,8 @@ const projects = [
     desc: 'Agent-first gig scheduling with one guarantee: two confirmed bookings can never overlap. A pure, unit-tested engine enforces it across agents and timezones.',
     status: 'wip',
     statusText: 'Built -- pre-launch',
+    image: 'images/gigit.jpg?v=20260729',
+    imageAlt: 'Gigit homepage: "Never double-book your talent again."',
     detail: `Gigit is scheduling software for talent agents booking professionals onto gigs. Its core guarantee is simple and absolute: two confirmed bookings for the same pro can never overlap.\n\nThe scheduling engine is pure and unit-tested -- half-open interval overlap on absolute instants, with a per-gig IANA timezone so cross-timezone conflicts are caught DST-correctly. It checks all of a pro's confirmed bookings regardless of which agent owns the gig, while keeping agents isolated from one another: a rival's gigs are redacted to "booked elsewhere," even inside error messages.\n\nAround the engine sit an openings board where pros raise their hand for roles, two-way iCalendar interop including a token-based subscription feed, bulk import from CSV, spreadsheets, or .ics, and a geocoding location picker that requires choosing a specific candidate rather than trusting the top match. Distances render in miles for US venues and kilometers elsewhere.\n\nGigit is fully built and running, ahead of a public launch.`,
     stack: ['Next.js 15', 'TypeScript', 'Prisma', 'SQLite', 'Tailwind'],
     links: []
@@ -50,6 +56,8 @@ const projects = [
     desc: 'A self-operating publication on atheism, skepticism, and critical thinking: an autonomous AI pipeline picks a topic, writes the article, illustrates it, and ships it -- no human in the loop.',
     status: 'active',
     statusText: 'Live -- self-publishing',
+    image: 'images/artificial-atheist.jpg?v=20260729',
+    imageAlt: 'Artificial Atheist homepage with its latest AI-authored featured article.',
     detail: `Artificial Atheist is an AI-authored publication on atheism, skepticism, and critical thinking, and its entire editorial pipeline runs as a scheduled GitHub Action.\n\nOn a recurring schedule, the generator inventories what has already been published, selects the least-covered topic, and commissions an article with a genuinely new angle -- titles are deduplicated against the archive. It generates an accompanying illustration and commits Markdown, which triggers a static rebuild that puts the piece live, end to end, with no manual step.\n\nA local human-in-the-loop studio is available for steering an article from a seed idea, and an A/B harness runs the same prompt across multiple AI providers to compare latency and output -- the generator itself is provider-agnostic.\n\nThe brand also spans AtheismIQ, a shareable knowledge quiz that places players on the belief/knowledge axes and scores them against the concepts people most often get wrong -- now part of the Artificial Atheist property.`,
     stack: ['Eleventy', 'Node', 'Claude API', 'OpenAI Images', 'GitHub Actions'],
     links: [{ label: 'Read It', url: 'https://artificialatheist.com' }]
@@ -220,6 +228,19 @@ function openModal(id) {
   modal.querySelector('.modal-title').textContent = p.name;
   modal.querySelector('.modal-status-dot').className = `modal-status-dot project-status-dot ${p.status}`;
   modal.querySelector('.modal-status-text').textContent = p.statusText;
+
+  const figure = modal.querySelector('.modal-figure');
+  const shot = modal.querySelector('.modal-shot');
+  if (p.image) {
+    shot.src = p.image;
+    shot.alt = p.imageAlt || `${p.name} — site preview`;
+    figure.hidden = false;
+  } else {
+    shot.removeAttribute('src');
+    shot.alt = '';
+    figure.hidden = true;
+  }
+
   modal.querySelector('.modal-detail').innerHTML = p.detail.split('\n\n').map(para => `<p>${para}</p>`).join('');
   modal.querySelector('.modal-stack').innerHTML = p.stack.map(s => `<span class="stack-tag">${s}</span>`).join('');
   modal.querySelector('.modal-links').innerHTML = p.links.map(l =>
