@@ -37,6 +37,15 @@ PATH under its own name (once, on the droplet):
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
 
+- **prm** (`prm.lab980.com`, repo `ivjames/prm`) — a personal-relationship
+  manager on a **hybrid** shape: the backend is external **Supabase**
+  (managed Postgres + Auth + RLS), while the droplet serves the web PWA and
+  runs the ingestion/cadence workers under pm2 (`prm-web` binds the site port;
+  `prm-worker` binds none). So the droplet holds no DB for this site — the
+  `data/` dir and SQLite convention don't apply here. Provision with
+  `provision-site prm ivjames/prm`, then follow `prm/DEPLOY.md` (fill `.env`
+  with the Supabase keys, `pm2 start ecosystem.config.cjs`).
+
 ### Sites on their own domain (apex, not a *.lab980.com subdomain)
 
 A site can graduate off `*.lab980.com` onto its own domain while still being
