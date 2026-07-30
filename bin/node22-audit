@@ -24,7 +24,11 @@ set -uo pipefail
 FETCH=0
 DO_BUILD=1
 NODE22=""
-NODE22_VERSION="${NODE22_VERSION:-v22.11.0}"
+# Empty = auto-resolve the latest v22.x at fetch time. Pin only via the env var
+# (e.g. to match the exact version you intend to bump the droplet to). Do NOT
+# default to an early 22.x: modern build tooling (vite 8, rolldown, eslint 10)
+# requires >=22.12/22.13, so testing against, say, 22.11 yields FALSE failures.
+NODE22_VERSION="${NODE22_VERSION:-}"
 DIRS=()
 
 c_blue=$'\033[1;34m'; c_green=$'\033[1;32m'; c_yellow=$'\033[1;33m'; c_red=$'\033[1;31m'; c_off=$'\033[0m'
@@ -67,6 +71,15 @@ if [ "$DO_BUILD" -eq 1 ] && [ -z "$NODE22" ]; then
 fi
 
 if [ "$DO_BUILD" -eq 1 ] && [ -z "$NODE22" ] && [ "$FETCH" -eq 1 ]; then
+  # Resolve the latest v22.x from the Node dist index unless pinned via env.
+  # index.json is newest-first, so the first v22 entry is the latest.
+  if [ -z "$NODE22_VERSION" ]; then
+    log "resolving latest Node 22.x from nodejs.org"
+    NODE22_VERSION="$(curl -fsSL https://nodejs.org/dist/index.json 2>/dev/null \
+      | "${JSON_NODE:-node}" -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{const a=JSON.parse(d);const v=a.find(x=>/^v22\./.test(x.version));process.stdout.write(v?v.version:"")}catch(e){process.stdout.write("")}})' 2>/dev/null)"
+    [ -n "$NODE22_VERSION" ] || NODE22_VERSION="v22.13.0"   # fallback if index unreachable
+    log "using Node $NODE22_VERSION"
+  fi
   arch="$(uname -m)"; case "$arch" in x86_64) narch=x64;; aarch64|arm64) narch=arm64;; *) die "unsupported arch $arch for --fetch-node22";; esac
   tarball="node-${NODE22_VERSION}-linux-${narch}"
   dest="/tmp/$tarball"
@@ -128,6 +141,7 @@ for dir in "${DIRS[@]}"; do
   build="skipped"
   if [ "$DO_BUILD" -eq 1 ]; then
     has_build="$(pkg_field "$dir" 'return p.scripts&&p.scripts.build?1:""')"
+    logdest="/tmp/n22-${name}.log"
     tmp="$(mktemp -d "/tmp/n22-${name}.XXXXXX")"
     # copy source only; never the live node_modules/dist
     if command -v rsync >/dev/null; then
@@ -145,12 +159,12 @@ for dir in "${DIRS[@]}"; do
     rc=$?
     case $rc in
       0)  build="PASS$([ -n "$has_build" ] || echo ' (no build script; install only)')";;
-      91) build="FAIL: npm ci/install (see $tmp/.audit.log)";;
-      92) build="FAIL: npm run build (see $tmp/.audit.log)";;
-      *)  build="FAIL: rc=$rc (see $tmp/.audit.log)";;
+      91) build="FAIL: npm ci/install (see $logdest)";;
+      92) build="FAIL: npm run build (see $logdest)";;
+      *)  build="FAIL: rc=$rc (see $logdest)";;
     esac
     # keep the log on failure, clean the copy either way
-    if [ "$rc" -eq 0 ]; then rm -rf "$tmp"; else cp "$tmp/.audit.log" "/tmp/n22-${name}.log" 2>/dev/null; rm -rf "$tmp"; build="${build/$tmp/\/tmp\/n22-${name}.log}"; fi
+    if [ "$rc" -eq 0 ]; then rm -rf "$tmp"; else cp "$tmp/.audit.log" "$logdest" 2>/dev/null; rm -rf "$tmp"; fi
   fi
 
   RESULTS+=("$name|$engines|$native|$build")
