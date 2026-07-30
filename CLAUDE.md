@@ -106,3 +106,14 @@ a twice-daily 03:23/15:23 sweep logging to /var/log/lab980-renew-certs.log):
   drop support in a future release (surfaced by the `prm` site). Non-blocking
   today — everything runs — but plan a droplet-wide bump to Node 22 LTS. Rebuild
   each site (`npm ci && npm run build`) and `pm2 restart` after upgrading.
+  **Pre-flight before bumping:** `bin/node22-audit` (symlink to PATH like the
+  other bin/ scripts) walks every `/var/www/*` site and reports, per site, its
+  declared `engines.node`, any native deps needing a rebuild, and a throwaway
+  clean-build test under a side-by-side Node 22 — all read-only, without
+  touching the running Node 20 processes:
+
+    node22-audit --fetch-node22        # downloads Node 22 to /tmp, build-tests each site
+    node22-audit --node22 /path/to/node22/bin/node   # use an already-installed 22
+
+  Gate the bump on a clean matrix; anything red gets its /tmp/n22-<site>.log
+  inspected first. Native modules still need `npm rebuild` after the actual bump.
