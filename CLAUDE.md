@@ -117,3 +117,20 @@ a twice-daily 03:23/15:23 sweep logging to /var/log/lab980-renew-certs.log):
 
   Gate the bump on a clean matrix; anything red gets its /tmp/n22-<site>.log
   inspected first. Native modules still need `npm rebuild` after the actual bump.
+
+  **Doing the bump:** the Supabase client (`@supabase/supabase-js` >=2.110)
+  now *hard-requires* native WebSocket (Node 22+), so `prm` no longer runs on
+  Node 20 — this is a real forcing function, not just the deprecation warning.
+  Steps, in order:
+    1. (manual) install Node 22 as the default runtime — however node is
+       managed on the box: nodesource
+       (`curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && apt-get install -y nodejs`),
+       or `n 22`, or nvm. Verify `node -v` -> v22.
+    2. `bin/node22-bump` (symlink to PATH like the others) does the rest:
+       reinstalls pm2 under 22, recompiles every /var/www/* site's native
+       modules against the new ABI (Node 20 = MODULE_VERSION 115, 22 = 127 —
+       old *.node won't load), then `pm2 update` + `pm2 save`, gated so it
+       won't restart if any site failed to rebuild. `--dry-run` first.
+    3. (manual) confirm the boot hook still points at the new node
+       (`systemctl is-enabled pm2-root`; re-run `pm2 startup ...` if the node
+       path changed), and spot-check a couple of health endpoints.
