@@ -92,3 +92,17 @@ a twice-daily 03:23/15:23 sweep logging to /var/log/lab980-renew-certs.log):
   (e.g. a Python `lib/` rule eating a JS `lib/`). git ls-files <dir> to confirm.
 - Prisma blocks destructive CLI actions for AI agents (db push --force-reset,
   migrate reset). Delete the target file and run a plain db push/migrate deploy.
+- pm2: setting `instances` in an ecosystem file silently flips a process into
+  cluster mode, and cluster-mode startup crashes land in `~/.pm2/pm2.log`, not
+  the app's own error log — a crash-looping app with EMPTY logs is the tell.
+  Every site here runs `fork`; set `exec_mode: "fork"` explicitly and omit
+  `instances`. (Also: `pm2 restart` won't change an already-registered
+  process's mode — `pm2 delete` + `pm2 start` to actually switch it.)
+
+## Follow-ups / pending maintenance
+
+- **Node 20 -> 22 upgrade (droplet-wide).** The box is on Node 20 LTS, but
+  `@supabase/supabase-js` now emits a deprecation warning on Node <=20 and will
+  drop support in a future release (surfaced by the `prm` site). Non-blocking
+  today — everything runs — but plan a droplet-wide bump to Node 22 LTS. Rebuild
+  each site (`npm ci && npm run build`) and `pm2 restart` after upgrading.
