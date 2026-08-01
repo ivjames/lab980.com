@@ -46,6 +46,19 @@ Provision stops before build/run — each site is deployed its own way afterward
   `provision-site prm ivjames/prm`, then follow `prm/DEPLOY.md` (fill `.env`
   with the Supabase keys, `pm2 start ecosystem.config.cjs`).
 
+- **qa-engine** (`qa-engine.lab980.com`, repo `ivjames/qa-engine`, port 8044) —
+  an AI-driven web-app QA engine (Flask + SSE) on the **standard** shape, but
+  with two extra runtimes beyond a plain Node site: a **Python venv**
+  (Flask/Playwright/Pillow/anthropic, under **gunicorn gthread** via pm2 —
+  `script: .venv/bin/gunicorn`, fork mode) and **Node** for the Lighthouse CLI
+  (`npm install`). Uses the local `data/` SQLite convention (findings +
+  content-hash cache) and needs a Playwright chromium
+  (`playwright install --with-deps chromium`). `ANTHROPIC_API_KEY` comes from
+  `/etc/environment`; with no key it self-degrades to a mock-model mode (Tier-0
+  scanners still run for real). Provision with
+  `provision-site qa-engine ivjames/qa-engine --port 8044`, then follow
+  `qa-engine/DEPLOY.md`. Operate CLI: `bin/qa-engine` (redeploy/restart/logs/backup).
+
 ### Sites on their own domain (apex, not a *.lab980.com subdomain)
 
 A site can graduate off `*.lab980.com` onto its own domain while still being
