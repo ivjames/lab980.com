@@ -29,10 +29,12 @@ PATH under its own name (once, on the droplet):
   ln -sf /var/www/lab980/bin/provision-site   /usr/local/bin/provision-site
   ln -sf /var/www/lab980/bin/deprovision-site /usr/local/bin/deprovision-site
   ln -sf /var/www/lab980/bin/renew-certs      /usr/local/bin/renew-certs
+  ln -sf /var/www/lab980/bin/fix-nginx-http2  /usr/local/bin/fix-nginx-http2
 
   provision-site <stub> [repo]       # DO DNS + /var/www dir + repo clone + nginx + TLS
   deprovision-site <stub>            # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
   renew-certs                        # renew any cert expiring within 2 days (see below)
+  fix-nginx-http2                    # audit/fix "protocol options redefined" warnings (see below)
 
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
@@ -83,6 +85,34 @@ a twice-daily 03:23/15:23 sweep logging to /var/log/lab980-renew-certs.log):
 
   renew-certs --install-cron
   renew-certs --uninstall-cron # remove it
+
+## nginx "protocol options redefined" warnings
+
+On reload/restart nginx may emit, once per disagreeing listen line:
+
+    [warn] protocol options redefined for 0.0.0.0:443 in /etc/nginx/sites-enabled/<site>:NN
+
+Cause: every site shares the same 0.0.0.0:443 / [::]:443 sockets, and nginx
+keeps ONE set of protocol options (http2, proxy_protocol, ...) per socket —
+it warns whenever vhosts disagree. Ours drift because certbot writes the 443
+listen lines at provision time and changed style over the years: older
+certbot wrote `listen 443 ssl http2;`, newer writes `listen 443 ssl;`.
+Harmless — nginx merges the options, so http2 stays enabled for the whole
+socket if any vhost asks for it — but it's noise on every deploy.
+
+Fix with `fix-nginx-http2` (audits by default, read-only):
+
+  fix-nginx-http2            # report which vhosts disagree about http2
+  fix-nginx-http2 --dry-run  # show the exact diff --fix would apply
+  fix-nginx-http2 --fix      # rewrite so all vhosts agree http2 is on,
+                             # then nginx -t + reload
+
+It picks the right form for the installed nginx (>= 1.25.1 gets the modern
+per-server `http2 on;` directive; older gets the `http2` listen flag added
+everywhere), backs up every touched file under /var/backups/, and rolls the
+whole change back if nginx -t fails. Idempotent — re-run any time the
+warnings reappear (e.g. after provisioning a new site with a certbot whose
+style differs from the existing vhosts).
 
 ## Engineering lessons
 
