@@ -1,0 +1,229 @@
+#!/usr/bin/env bash
+# lab980-fix-nginx-http2 — make every vhost agree about http2 on :443 so
+# nginx stops warning "protocol options redefined" on reload/restart.
+#
+# Why this happens: nginx keeps ONE set of protocol options (http2,
+# proxy_protocol, ...) per listen address:port. All our sites share
+# 0.0.0.0:443 / [::]:443, so when one vhost says `listen 443 ssl http2;`
+# and another says `listen 443 ssl;`, nginx warns once per disagreeing
+# listen line:
+#
+#   [warn] protocol options redefined for 0.0.0.0:443 in /etc/nginx/sites-enabled/<site>:NN
+#
+# It is harmless — nginx merges the options across vhosts (http2 ends up
+# enabled for the whole socket if ANY vhost asks for it) — but it's noise on
+# every deploy. The drift comes from certbot: older certbot versions wrote
+# `listen 443 ssl http2;`, newer ones write `listen 443 ssl;`, so vhosts
+# provisioned at different times disagree.
+#
+# What this does:
+#   audit (default)  read-only: list every :443 listen line per enabled
+#                    vhost, flag which carry http2, and say whether the set
+#                    is consistent.
+#   --dry-run        show the unified diff of what --fix would change.
+#   --fix            rewrite vhosts so everyone agrees http2 is ON (it
+#                    effectively already is — see merge behavior above):
+#                      * nginx >= 1.25.1: strip the deprecated `http2` flag
+#                        from listen lines and set the modern per-server
+#                        `http2 on;` directive in each :443 ssl server block
+#                      * nginx <  1.25.1: append `http2` to every :443 ssl
+#                        listen line that lacks it
+#                    Backs up every touched file first, runs nginx -t, rolls
+#                    everything back if the test fails, reloads on success.
+set -euo pipefail
+
+ENABLED_DIR="/etc/nginx/sites-enabled"
+BACKUP_ROOT="/var/backups"
+MODE="audit"
+
+c_blue=$'\033[1;34m'; c_yellow=$'\033[1;33m'; c_red=$'\033[1;31m'; c_off=$'\033[0m'
+log()  { printf '%s==>%s %s\n' "$c_blue" "$c_off" "$*"; }
+warn() { printf '%swarn:%s %s\n' "$c_yellow" "$c_off" "$*" >&2; }
+die()  { printf '%serror:%s %s\n' "$c_red" "$c_off" "$*" >&2; exit 1; }
+
+usage() {
+  cat <<'USAGE'
+lab980-fix-nginx-http2 — silence nginx "protocol options redefined" warnings
+by making every enabled vhost agree that :443 speaks http2.
+
+Usage:
+  fix-nginx-http2             audit only: report each vhost's :443 listen
+                              lines and whether http2 usage is consistent
+  fix-nginx-http2 --dry-run   show the diff --fix would apply (no writes)
+  fix-nginx-http2 --fix       apply: rewrite vhosts, nginx -t, reload
+                              (rolls back from backup if the test fails)
+
+Options:
+  -h, --help   this help
+
+The rewrite form is picked from the running nginx version: >= 1.25.1 uses
+the per-server `http2 on;` directive (the listen-line `http2` flag is
+deprecated there); older nginx gets `http2` appended to every :443 ssl
+listen line instead.
+USAGE
+}
+
+# ---- parse args ----
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --fix)     MODE="fix"; shift;;
+    --dry-run) MODE="dry-run"; shift;;
+    -h|--help) usage; exit 0;;
+    -*) die "unknown option: $1 (see --help)";;
+    *)  die "unexpected arg: $1";;
+  esac
+done
+
+[ -d "$ENABLED_DIR" ] || die "$ENABLED_DIR not found — is nginx installed?"
+if [ "$MODE" = "fix" ]; then
+  [ "$(id -u)" -eq 0 ] || die "run as root for --fix."
+fi
+
+# ---- collect enabled vhost files (dedupe symlink targets) ----
+files=()
+for link in "$ENABLED_DIR"/*; do
+  [ -e "$link" ] || continue
+  real="$(readlink -f "$link")"
+  dup=0
+  for f in ${files[@]+"${files[@]}"}; do [ "$f" = "$real" ] && { dup=1; break; }; done
+  [ "$dup" -eq 0 ] && files+=("$real")
+done
+[ "${#files[@]}" -gt 0 ] || die "no enabled sites under $ENABLED_DIR."
+
+# ---- audit ----
+with_http2=0
+without_http2=0
+directive_on=0
+log "Scanning ${#files[@]} enabled vhost file(s) for :443 listen lines"
+for f in "${files[@]}"; do
+  lines="$(grep -nE '^[[:space:]]*(listen[[:space:]][^;]*443|http2[[:space:]]+on[[:space:]]*;)' "$f" || true)"
+  [ -n "$lines" ] || continue
+  printf '%s\n' "$f"
+  while IFS= read -r line; do
+    case "$line" in
+      *http2\ on*|*"http2  on"*)
+        directive_on=$(( directive_on + 1 ))
+        printf '  %-72s [http2 on;]\n' "$line";;
+      *http2*)
+        with_http2=$(( with_http2 + 1 ))
+        printf '  %-72s [http2 flag]\n' "$line";;
+      *)
+        without_http2=$(( without_http2 + 1 ))
+        printf '  %-72s [no http2]\n' "$line";;
+    esac
+  done <<< "$lines"
+done
+
+echo
+log "listen lines with http2 flag: $with_http2 | without: $without_http2 | http2 on; directives: $directive_on"
+if [ "$with_http2" -gt 0 ] && [ "$without_http2" -gt 0 ]; then
+  warn "INCONSISTENT — this is what makes nginx warn 'protocol options redefined'."
+elif [ "$with_http2" -gt 0 ] || [ "$without_http2" -eq 0 ]; then
+  log "consistent — nginx should not be warning about :443 protocol options."
+else
+  log "no vhost carries http2 — consistent (http2 simply off everywhere)."
+fi
+[ "$MODE" = "audit" ] && exit 0
+
+# ---- pick rewrite form from the running nginx ----
+ver="$(nginx -v 2>&1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+[ -n "$ver" ] || die "could not determine nginx version (nginx -v)."
+modern=0
+IFS=. read -r vM vm vp <<< "$ver"
+if [ "$vM" -gt 1 ] || { [ "$vM" -eq 1 ] && { [ "$vm" -gt 25 ] || { [ "$vm" -eq 25 ] && [ "$vp" -ge 1 ]; }; }; }; then
+  modern=1
+fi
+if [ "$modern" -eq 1 ]; then
+  log "nginx $ver >= 1.25.1: using per-server 'http2 on;' directive"
+else
+  log "nginx $ver < 1.25.1: adding 'http2' flag to every :443 ssl listen line"
+fi
+
+# Rewrite one vhost on stdin -> stdout.
+transform() {
+  if [ "$modern" -eq 1 ]; then
+    # Strip the deprecated listen-line flag; ensure one `http2 on;` per
+    # server block that has an ssl :443 listen; drop duplicate directives.
+    awk '
+      /^[[:space:]]*server[[:space:]]*\{/ { done = 0 }
+      /^[[:space:]]*http2[[:space:]]+on[[:space:]]*;/ {
+        if (done) next
+        done = 1; print; next
+      }
+      /^[[:space:]]*listen[[:space:]]/ && /443/ {
+        is_ssl = ($0 ~ /[[:space:]]ssl/)
+        gsub(/[[:space:]]+http2/, "")
+        print
+        if (is_ssl && !done) { print "    http2 on;"; done = 1 }
+        next
+      }
+      { print }
+    '
+  else
+    awk '
+      /^[[:space:]]*listen[[:space:]]/ && /443/ && /[[:space:]]ssl/ && !/http2/ {
+        sub(/;/, " http2;")
+      }
+      { print }
+    '
+  fi
+}
+
+# ---- dry run: just show diffs ----
+if [ "$MODE" = "dry-run" ]; then
+  changed=0
+  for f in "${files[@]}"; do
+    if ! transform < "$f" | diff -u --label "$f (current)" --label "$f (fixed)" "$f" - ; then
+      changed=$(( changed + 1 ))
+      echo
+    fi
+  done
+  log "dry run: $changed file(s) would change. Apply with --fix."
+  exit 0
+fi
+
+# ---- fix: backup, rewrite, test, reload (rollback on failure) ----
+stamp="$(date +%Y%m%d-%H%M%S)"
+backup_dir="$BACKUP_ROOT/lab980-nginx-http2-$stamp"
+touched=()
+for f in "${files[@]}"; do
+  tmp="$(mktemp)"
+  transform < "$f" > "$tmp"
+  if cmp -s "$f" "$tmp"; then
+    rm -f "$tmp"
+    continue
+  fi
+  mkdir -p "$backup_dir$(dirname "$f")"
+  cp -p "$f" "$backup_dir$f"
+  # overwrite in place (cat > keeps the inode, so sites-enabled symlinks and
+  # file ownership/permissions are untouched)
+  cat "$tmp" > "$f"
+  rm -f "$tmp"
+  touched+=("$f")
+  log "rewrote $f"
+done
+
+if [ "${#touched[@]}" -eq 0 ]; then
+  log "nothing to change — all vhosts already consistent."
+  exit 0
+fi
+log "backups: $backup_dir"
+
+if ! nginx -t; then
+  warn "nginx -t FAILED — rolling back ${#touched[@]} file(s)."
+  for f in "${touched[@]}"; do
+    cat "$backup_dir$f" > "$f"
+  done
+  nginx -t || warn "nginx -t still failing after rollback — inspect manually!"
+  die "aborted; original configs restored from $backup_dir."
+fi
+
+remaining="$(nginx -t 2>&1 | grep -c 'protocol options redefined' || true)"
+if [ "$remaining" -gt 0 ]; then
+  warn "$remaining 'protocol options redefined' warning(s) remain — some vhost"
+  warn "outside the http2 pattern (e.g. proxy_protocol, or a conf.d/ file)"
+  warn "still disagrees. Config is valid; inspect nginx -t output above."
+fi
+
+systemctl reload nginx
+log "Done. ${#touched[@]} vhost(s) rewritten, nginx reloaded."
