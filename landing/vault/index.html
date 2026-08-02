@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>The Vault — lab980</title>
+  <style>
+    :root {
+      --black:  #0A0A0A;
+      --panel:  #111111;
+      --white:  #F0EDE8;
+      --accent: #4A9EFF;
+      --mid:    #9B9B9B;
+      --faint:  #6E6E6E;
+      --border: #232323;
+      --mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--black);
+      background-image:
+        linear-gradient(var(--border) 1px, transparent 1px),
+        linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 48px 48px;
+      background-position: center;
+      color: var(--white);
+      font-family: var(--mono);
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 56px 48px;
+      max-width: 480px;
+      width: 100%;
+    }
+    .glyph {
+      font-size: 44px;
+      line-height: 1;
+      display: block;
+      margin-bottom: 28px;
+      filter: grayscale(1) brightness(1.6);
+    }
+    .label {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--mid);
+      margin-bottom: 8px;
+    }
+    .status {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 28px;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--faint);
+    }
+    .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: #3DFF8F;
+      box-shadow: 0 0 6px #3DFF8F66;
+    }
+    footer { margin-top: 40px; font-size: 11px; color: var(--faint); }
+    footer a { color: var(--faint); text-decoration: none; border-bottom: 1px solid var(--border); }
+    footer a:hover { color: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <span class="glyph" aria-hidden="true">🔒</span>
+    <p class="label">vault.lab980.com</p>
+    <h1>The Vault</h1>
+    <p>Private storage &amp; webhook endpoint.</p>
+    <p>Machine traffic only — there is nothing to browse here.</p>
+    <span class="status"><span class="dot" aria-hidden="true"></span>Service operational</span>
+  </main>
+  <footer>A <a href="https://lab980.com">lab980</a> service</footer>
+</body>
+</html>

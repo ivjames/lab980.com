@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Photo Studio — lab980</title>
+  <style>
+    :root {
+      --black:  #0A0A0A;
+      --panel:  #111111;
+      --white:  #F0EDE8;
+      --accent: #4A9EFF;
+      --mid:    #9B9B9B;
+      --faint:  #6E6E6E;
+      --border: #232323;
+      --mono: ui-monospace, 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: var(--black);
+      background-image: radial-gradient(circle at 50% 40%, #14202E 0%, var(--black) 65%);
+      color: var(--white);
+      font-family: var(--mono);
+      padding: 24px;
+      text-align: center;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 56px 48px;
+      max-width: 480px;
+      width: 100%;
+    }
+    .aperture {
+      width: 64px; height: 64px;
+      margin: 0 auto 28px;
+      border: 2px solid var(--accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .aperture::after {
+      content: '';
+      width: 26px; height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.9;
+    }
+    .aperture::before {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px dashed var(--faint);
+      border-radius: 50%;
+    }
+    .label {
+      font-size: 11px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-bottom: 20px;
+    }
+    p {
+      font-size: 13px;
+      line-height: 1.7;
+      color: var(--mid);
+      margin-bottom: 8px;
+    }
+    .cta {
+      display: inline-block;
+      margin-top: 28px;
+      padding: 12px 24px;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: var(--mono);
+      font-size: 13px;
+      letter-spacing: 0.08em;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .cta:hover { background: var(--accent); color: var(--black); }
+    .hint { margin-top: 16px; font-size: 11px; color: var(--faint); }
+    footer { margin-top: 40px; font-size: 11px; color: var(--faint); }
+    footer a { color: var(--faint); text-decoration: none; border-bottom: 1px solid var(--border); }
+    footer a:hover { color: var(--accent); border-color: var(--accent); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="aperture" aria-hidden="true"></div>
+    <p class="label">photos.lab980.com</p>
+    <h1>Photo Studio</h1>
+    <p>A private gallery of studio work.</p>
+    <p>Access is by invitation.</p>
+    <!-- CTA hits a real gallery path, which triggers the site's auth. -->
+    <a class="cta" href="/index.html">Enter the studio →</a>
+    <p class="hint">You'll be asked to sign in.</p>
+  </main>
+  <footer>A <a href="https://lab980.com">lab980</a> service</footer>
+</body>
+</html>

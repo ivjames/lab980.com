@@ -32,6 +32,7 @@ PATH under its own name (once, on the droplet):
   ln -sf /var/www/lab980/bin/fix-nginx-http2  /usr/local/bin/fix-nginx-http2
   ln -sf /var/www/lab980/bin/fix-security-headers /usr/local/bin/fix-security-headers
   ln -sf /var/www/lab980/bin/health-check     /usr/local/bin/health-check
+  ln -sf /var/www/lab980/bin/install-landing  /usr/local/bin/install-landing
 
   provision-site <stub> [repo]       # DO DNS + /var/www dir + repo clone + nginx + TLS
   deprovision-site <stub>            # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
@@ -39,6 +40,7 @@ PATH under its own name (once, on the droplet):
   fix-nginx-http2                    # audit/fix "protocol options redefined" warnings (see below)
   fix-security-headers               # audit/fix security response headers per vhost (see below)
   health-check                       # probe every site + pm2 app + systemd unit (see below)
+  install-landing <fqdn> [dir]       # static landing page at "/" on an existing vhost (see below)
 
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
@@ -180,6 +182,32 @@ scripts or run from cron with alerting on non-zero.
 Run it as root for cert-expiry checks (the letsencrypt live dirs are 0700);
 everything else works unprivileged. Run after every deploy, reboot, or
 provision — and before blaming DNS.
+
+## Landing pages at /
+
+Some sites intentionally serve nothing friendly at `/` — vault is a webhook
+endpoint (its app 404s the root), photos is basic-auth-locked (401). Both
+read as failures to visitors and as warnings in `health-check`. The fix is a
+static landing page at exactly the root URI, with everything else untouched:
+
+  landing/<name>/index.html    the pages, in this repo (self-contained HTML,
+                               lab980 dark/mono aesthetic; git pull updates
+                               them with no nginx change)
+  install-landing <fqdn>       inserts a marker-tagged `location = /` block
+                               into the vhost's :443 server block pointing at
+                               landing/<first-label-of-fqdn>; `auth_basic off`
+                               inside it so locked sites get a public landing
+
+  install-landing vault.lab980.com             # serves landing/vault at /
+  install-landing photos.lab980.com            # serves landing/photos at /
+  install-landing <fqdn> --dry-run             # diff only; works with --remove
+  install-landing <fqdn> --remove              # take the managed block out
+
+Because the match is exact (`location = /`), the CTA on a landing page can
+link to a real path to enter the site — photos' "Enter the studio" points at
+`/index.html`, which still goes through basic auth to the gallery. Same
+safety shape as the other fixers: backup under /var/backups/, nginx -t with
+rollback, idempotent (re-running replaces the managed block).
 
 ## Engineering lessons
 
