@@ -30,11 +30,13 @@ PATH under its own name (once, on the droplet):
   ln -sf /var/www/lab980/bin/deprovision-site /usr/local/bin/deprovision-site
   ln -sf /var/www/lab980/bin/renew-certs      /usr/local/bin/renew-certs
   ln -sf /var/www/lab980/bin/fix-nginx-http2  /usr/local/bin/fix-nginx-http2
+  ln -sf /var/www/lab980/bin/fix-security-headers /usr/local/bin/fix-security-headers
 
   provision-site <stub> [repo]       # DO DNS + /var/www dir + repo clone + nginx + TLS
   deprovision-site <stub>            # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
   renew-certs                        # renew any cert expiring within 2 days (see below)
   fix-nginx-http2                    # audit/fix "protocol options redefined" warnings (see below)
+  fix-security-headers               # audit/fix security response headers per vhost (see below)
 
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
@@ -113,6 +115,36 @@ everywhere), backs up every touched file under /var/backups/, and rolls the
 whole change back if nginx -t fails. Idempotent — re-run any time the
 warnings reappear (e.g. after provisioning a new site with a certbot whose
 style differs from the existing vhosts).
+
+## Security response headers
+
+The qa-engine security pipeline flags any site missing the standard headers
+(HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy,
+Permissions-Policy, CSP) or leaking the nginx version in `Server:`. nginx
+serves each site's static files and proxies its app, so the vhost — not each
+app — is where the headers live. One shared snippet keeps every site
+consistent:
+
+  /etc/nginx/snippets/lab980-security-headers.conf  five safe-everywhere
+      headers, included at server{} level by each :443 vhost
+  /etc/nginx/snippets/lab980-csp-self.conf          strict self-only CSP,
+      OPT-IN per site (breaks anything loading cross-origin/inline)
+  /etc/nginx/conf.d/lab980-server-tokens.conf       server_tokens off;
+
+`provision-site` bakes the include into new vhosts (certbot copies it into
+the :443 block when TLS is added). Retrofit or audit existing sites with
+`fix-security-headers` (audit-only by default, same shape as the other
+fixers — backups under /var/backups/, nginx -t with rollback, idempotent):
+
+  fix-security-headers                       # per-vhost coverage matrix
+  fix-security-headers --dry-run             # exact diff --fix would apply
+  fix-security-headers --fix                 # apply the shared snippet everywhere
+  fix-security-headers --fix --csp <fqdn>    # also add self-only CSP to <fqdn>
+                                             # (repeatable; used for qa-demo/qa-bugs)
+
+A vhost that already sets its own Strict-Transport-Security is treated as
+hand-tuned and skipped. The self-only CSP is right for fully self-contained
+sites (the QA KSink pair); sites on Supabase/CDNs need a bespoke policy.
 
 ## Engineering lessons
 

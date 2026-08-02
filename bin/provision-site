@@ -177,6 +177,27 @@ if [ ! -f "$DIR/.env" ]; then
 fi
 
 # ---- 4. nginx vhost ----
+# Shared security headers snippet (HSTS, nosniff, frame/referrer/permissions
+# policies). fix-security-headers owns the content; seed it here so a fresh
+# droplet's first vhost doesn't 404 the include. certbot copies the whole
+# server block when it adds :443, so the include rides along into the TLS
+# vhost. See bin/fix-security-headers for the retrofit/audit tool.
+snippet="/etc/nginx/snippets/lab980-security-headers.conf"
+if [ ! -f "$snippet" ]; then
+  mkdir -p /etc/nginx/snippets
+  cat > "$snippet" <<'EOF'
+# lab980 shared security headers — managed by fix-security-headers.
+# Included at server{} level by every :443 vhost. Do not add a CSP here:
+# that one is per-site (snippets/lab980-csp-self.conf, opt-in).
+add_header Strict-Transport-Security "max-age=31536000" always;
+add_header X-Content-Type-Options "nosniff" always;
+add_header X-Frame-Options "SAMEORIGIN" always;
+add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+EOF
+  log "nginx: seeded $snippet"
+fi
+
 conf="/etc/nginx/sites-available/$FQDN"
 if [ -f "$conf" ]; then
   log "nginx: $conf already exists (leaving as-is)"
@@ -189,6 +210,8 @@ server {
     listen 80;
     listen [::]:80;
     server_name $server_names;
+
+    include snippets/lab980-security-headers.conf;
 
     location / {
         proxy_pass http://127.0.0.1:$PORT;
