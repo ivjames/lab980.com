@@ -31,12 +31,14 @@ PATH under its own name (once, on the droplet):
   ln -sf /var/www/lab980/bin/renew-certs      /usr/local/bin/renew-certs
   ln -sf /var/www/lab980/bin/fix-nginx-http2  /usr/local/bin/fix-nginx-http2
   ln -sf /var/www/lab980/bin/fix-security-headers /usr/local/bin/fix-security-headers
+  ln -sf /var/www/lab980/bin/health-check     /usr/local/bin/health-check
 
   provision-site <stub> [repo]       # DO DNS + /var/www dir + repo clone + nginx + TLS
   deprovision-site <stub>            # tear down nginx + cert + DNS (--purge also wipes dir+pm2)
   renew-certs                        # renew any cert expiring within 2 days (see below)
   fix-nginx-http2                    # audit/fix "protocol options redefined" warnings (see below)
   fix-security-headers               # audit/fix security response headers per vhost (see below)
+  health-check                       # probe every site + pm2 app + systemd unit (see below)
 
 Provision stops before build/run — each site is deployed its own way afterward
 (typically: cd /var/www/<stub> && npm ci && npm run build && pm2 start ... && pm2 save).
@@ -145,6 +147,39 @@ fixers — backups under /var/backups/, nginx -t with rollback, idempotent):
 A vhost that already sets its own Strict-Transport-Security is treated as
 hand-tuned and skipped. The self-only CSP is right for fully self-contained
 sites (the QA KSink pair); sites on Supabase/CDNs need a bespoke policy.
+
+## Health check sweep
+
+`health-check` is the one-shot "is everything on this box actually up"
+audit. It discovers what to check from the conventions above — nothing is
+hardcoded per site — and probes it all, read-only:
+
+- **sites**: every enabled nginx vhost. Per site: DNS A record points at the
+  droplet IP, the proxy_pass upstream answers on 127.0.0.1:<port> (a vhost
+  with no proxy_pass is treated as static), public `https://<fqdn>/` status
+  + latency, and cert days remaining (warn under 14).
+- **pm2**: every registered process — status online, exec mode (flags
+  anything not fork, per the cluster-mode lesson below), restart churn,
+  uptime, memory.
+- **systemd**: nginx, cron, certbot.timer, **pm2-root** (a missing pm2-root
+  is called out as the "pm2 save without the boot hook" trap), any service
+  named after a /var/www site dir, and anything currently failed. Checks
+  both active-now and enabled-at-boot.
+
+Output is a matrix per section with a per-row ok/WARN/FAIL verdict, plus a
+remedy note for each problem (the pm2/certbot/nginx command that fixes it).
+Exit 0 = healthy (warnings allowed), 1 = at least one FAIL — so it can gate
+scripts or run from cron with alerting on non-zero.
+
+  health-check                 # full sweep: systemd + pm2 + all sites
+  health-check --site prm      # only sites whose fqdn contains "prm"
+  health-check --local         # skip DNS + public https (box-internal only)
+  health-check --cert-days 30  # widen the cert-expiry warning window
+  health-check --timeout 5     # curl budget per probe (default 10s)
+
+Run it as root for cert-expiry checks (the letsencrypt live dirs are 0700);
+everything else works unprivileged. Run after every deploy, reboot, or
+provision — and before blaming DNS.
 
 ## Engineering lessons
 
