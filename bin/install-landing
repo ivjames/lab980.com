@@ -1,0 +1,180 @@
+#!/usr/bin/env bash
+# lab980-install-landing — serve a static landing page at exactly "/" on an
+# existing vhost, leaving every other path untouched.
+#
+# How: inserts a marker-tagged `location = /` block into each :443 ssl
+# server block of the vhost, pointing nginx at a landing directory (default:
+# this repo's landing/<stub>, so a `git pull` updates the page with no nginx
+# change). The block sets `auth_basic off`, so a basic-auth-protected site
+# can show a public landing while everything else stays locked — the exact
+# match means /index.html, /api/..., webhook paths etc. all behave as before.
+#
+# Same safety shape as the other lab980 fixers: backup under /var/backups/,
+# nginx -t with rollback on failure, idempotent (re-running replaces the
+# managed block in place), --remove undoes cleanly.
+set -euo pipefail
+
+ENABLED_DIR="${ENABLED_DIR:-/etc/nginx/sites-enabled}"
+LANDING_ROOT="${LANDING_ROOT:-/var/www/lab980/landing}"
+BACKUP_ROOT="/var/backups"
+MARK_BEGIN="# lab980-landing begin (managed by install-landing)"
+MARK_END="# lab980-landing end"
+MODE="install"
+DRY=0
+FQDN=""
+SRC=""
+
+c_blue=$'\033[1;34m'; c_yellow=$'\033[1;33m'; c_red=$'\033[1;31m'; c_off=$'\033[0m'
+log()  { printf '%s==>%s %s\n' "$c_blue" "$c_off" "$*"; }
+warn() { printf '%swarn:%s %s\n' "$c_yellow" "$c_off" "$*" >&2; }
+die()  { printf '%serror:%s %s\n' "$c_red" "$c_off" "$*" >&2; exit 1; }
+
+usage() {
+  cat <<'USAGE'
+lab980-install-landing — static landing page at "/" for an existing vhost.
+
+Usage:
+  install-landing <fqdn> [landing-dir]   add/update the landing block
+  install-landing <fqdn> --remove        take the managed block back out
+  install-landing <fqdn> --dry-run       show the diff without applying
+
+  <fqdn>         vhost to modify, e.g. vault.lab980.com
+  [landing-dir]  directory containing index.html
+                 (default: /var/www/lab980/landing/<first label of fqdn>)
+
+Only the exact URI "/" is affected. Everything else — proxied app routes,
+webhook endpoints, auth-protected files, /index.html itself — keeps its
+existing behavior, so a landing CTA can link to a real path to enter the
+site. auth_basic is switched off inside the block so protected sites get a
+public landing.
+
+Examples:
+  install-landing vault.lab980.com                # uses landing/vault
+  install-landing photos.lab980.com               # uses landing/photos
+  install-landing photos.lab980.com --remove
+USAGE
+}
+
+# ---- parse args ----
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --remove)  MODE="remove"; shift;;
+    --dry-run) DRY=1; shift;;
+    -h|--help) usage; exit 0;;
+    -*) die "unknown option: $1 (see --help)";;
+    *)
+      if [ -z "$FQDN" ]; then FQDN="$1"
+      elif [ -z "$SRC" ]; then SRC="$1"
+      else die "unexpected arg: $1"; fi
+      shift;;
+  esac
+done
+[ -n "$FQDN" ] || { usage; exit 1; }
+[ "$DRY" -eq 1 ] || [ "$(id -u)" -eq 0 ] || die "run as root."
+
+SRC="${SRC:-$LANDING_ROOT/${FQDN%%.*}}"
+
+# ---- resolve the vhost file (platform convention: file named <fqdn>) ----
+vhost=""
+if [ -e "$ENABLED_DIR/$FQDN" ]; then
+  vhost="$(readlink -f "$ENABLED_DIR/$FQDN")"
+else
+  for link in "$ENABLED_DIR"/*; do
+    [ -e "$link" ] || continue
+    if grep -qE "^[[:space:]]*server_name[^;]*[[:space:]]$FQDN([[:space:];]|$)" "$link"; then
+      vhost="$(readlink -f "$link")"; break
+    fi
+  done
+fi
+[ -n "$vhost" ] || die "no enabled vhost found for $FQDN under $ENABLED_DIR."
+log "vhost: $vhost"
+
+if [ "$MODE" != "remove" ]; then
+  [ -f "$SRC/index.html" ] || die "$SRC/index.html not found — pull the repo (or pass a landing-dir)."
+  log "landing: $SRC"
+fi
+
+# ---- transforms (stdin -> stdout) ----
+strip_block() {
+  awk -v b="$MARK_BEGIN" -v e="$MARK_END" '
+    index($0, b) { skip = 1 }
+    !skip { print }
+    index($0, e) { skip = 0 }
+  '
+}
+
+insert_block() { # adds the managed block after each :443 ssl listen line
+  awk -v b="$MARK_BEGIN" -v e="$MARK_END" -v root="$SRC" '
+    /^[[:space:]]*server[[:space:]]*\{/ { done = 0 }
+    { print }
+    /^[[:space:]]*listen[[:space:]]/ && /443/ && /[[:space:]]ssl/ {
+      if (!done) {
+        print "    " b
+        print "    location = / {"
+        print "        auth_basic off;"
+        print "        root " root ";"
+        print "        try_files /index.html =404;"
+        print "    }"
+        print "    " e
+        done = 1
+      }
+    }
+  '
+}
+
+transform() {
+  if [ "$MODE" = "remove" ]; then
+    strip_block < "$vhost"
+  else
+    strip_block < "$vhost" | insert_block
+  fi
+}
+
+if [ "$MODE" != "remove" ] \
+   && ! grep -qE '^[[:space:]]*listen[[:space:]][^;]*443[^;]*ssl' "$vhost"; then
+  die "$vhost has no :443 ssl listen — provision TLS first (certbot --nginx -d $FQDN --redirect)."
+fi
+
+# ---- dry run ----
+if [ "$DRY" -eq 1 ]; then
+  if transform | diff -u --label "$vhost (current)" --label "$vhost (new)" "$vhost" -; then
+    log "dry run: no change needed."
+  else
+    log "dry run: apply with the same command minus --dry-run."
+  fi
+  exit 0
+fi
+
+# ---- apply: backup, write, test, rollback on failure ----
+tmp="$(mktemp)"
+transform > "$tmp"
+if cmp -s "$vhost" "$tmp"; then
+  rm -f "$tmp"
+  log "no change — $vhost already in the desired state."
+  exit 0
+fi
+
+stamp="$(date +%Y%m%d-%H%M%S)"
+backup_dir="$BACKUP_ROOT/lab980-landing-$stamp"
+mkdir -p "$backup_dir$(dirname "$vhost")"
+cp -p "$vhost" "$backup_dir$vhost"
+log "backup: $backup_dir$vhost"
+
+# cat > keeps the inode, so sites-enabled symlinks and permissions survive
+cat "$tmp" > "$vhost"
+rm -f "$tmp"
+
+if ! nginx -t; then
+  warn "nginx -t FAILED — rolling back."
+  cat "$backup_dir$vhost" > "$vhost"
+  nginx -t || warn "nginx -t still failing after rollback — inspect manually!"
+  die "aborted; original vhost restored from $backup_dir."
+fi
+
+systemctl reload nginx
+if [ "$MODE" = "remove" ]; then
+  log "Done. Landing block removed from $FQDN; nginx reloaded."
+else
+  log "Done. $FQDN now serves $SRC/index.html at /; nginx reloaded."
+  log "Verify:  curl -sI https://$FQDN/ | head -1"
+fi
