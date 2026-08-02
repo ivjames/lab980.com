@@ -1,0 +1,335 @@
+#!/usr/bin/env bash
+# lab980-health-check — discover everything serving on this droplet and
+# probe it: systemd units, pm2 processes, and every nginx-fronted site.
+#
+# Discovery is convention-driven, nothing hardcoded per site:
+#   sites    every enabled nginx vhost (/etc/nginx/sites-enabled/*):
+#            fqdn from server_name, upstream port(s) from proxy_pass
+#            (no proxy_pass -> static site), cert path from ssl_certificate
+#   pm2      pm2 jlist — whatever is registered, any mode
+#   systemd  core infra (nginx, cron, pm2-root, certbot.timer) plus any
+#            <name>.service matching a /var/www/<name> site dir, plus
+#            anything currently in the failed state
+#
+# Checks:
+#   per unit   active now + enabled at boot (reboot survival)
+#   per pm2    status online, exec mode (fork expected here), restart churn
+#   per site   DNS A -> droplet IP, upstream answering on 127.0.0.1:<port>,
+#              public https://<fqdn>/ status + latency, cert days remaining
+#
+# Read-only — probes only, changes nothing, safe to run any time or from
+# cron. Exit 0 = healthy (warnings allowed), 1 = at least one FAIL.
+set -euo pipefail
+
+ENABLED_DIR="${ENABLED_DIR:-/etc/nginx/sites-enabled}"
+WWW_DIR="${WWW_DIR:-/var/www}"
+EXPECTED_IP="${EXPECTED_IP:-165.22.128.19}"
+TIMEOUT=10
+CERT_WARN_DAYS=14
+RESTART_WARN=10
+LOCAL_ONLY=0
+FILTER=""
+
+c_blue=$'\033[1;34m'; c_green=$'\033[1;32m'; c_yellow=$'\033[1;33m'
+c_red=$'\033[1;31m'; c_off=$'\033[0m'
+log()  { printf '%s==>%s %s\n' "$c_blue" "$c_off" "$*"; }
+warn() { printf '%swarn:%s %s\n' "$c_yellow" "$c_off" "$*" >&2; }
+die()  { printf '%serror:%s %s\n' "$c_red" "$c_off" "$*" >&2; exit 1; }
+
+usage() {
+  cat <<'USAGE'
+lab980-health-check — discover and probe every site and service on this box.
+
+Usage:
+  health-check [options]
+
+Options:
+  --site <substr>   only check sites whose fqdn contains <substr>
+                    (systemd/pm2 sections still run in full)
+  --local           skip DNS + public https probes (box-internal checks only;
+                    useful when the droplet can't reach itself by public name)
+  --timeout N       curl timeout per probe in seconds (default: 10)
+  --cert-days N     warn when a cert expires within N days (default: 14)
+  --ip <addr>       expected DNS A record target (default: 165.22.128.19)
+  -h, --help        this help
+
+Three sections, each a matrix with a per-row verdict:
+  systemd   nginx, cron, pm2-root (the boot hook), certbot.timer, any
+            service named after a /var/www site dir, any failed unit
+  pm2       every registered process: status / mode / restarts / uptime / mem
+  sites     every enabled vhost: dns / upstream / public / cert
+
+Verdicts: ok, WARN (degraded but serving), FAIL (down or misconfigured).
+Exit 0 unless something FAILed. Read-only — changes nothing.
+USAGE
+}
+
+# ---- parse args ----
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --site)      [ $# -ge 2 ] || die "--site needs a value"; FILTER="$2"; shift 2;;
+    --local)     LOCAL_ONLY=1; shift;;
+    --timeout)   [ $# -ge 2 ] || die "--timeout needs a value"; TIMEOUT="$2"; shift 2;;
+    --cert-days) [ $# -ge 2 ] || die "--cert-days needs a value"; CERT_WARN_DAYS="$2"; shift 2;;
+    --ip)        [ $# -ge 2 ] || die "--ip needs a value"; EXPECTED_IP="$2"; shift 2;;
+    -h|--help)   usage; exit 0;;
+    -*) die "unknown option: $1 (see --help)";;
+    *)  die "unexpected arg: $1";;
+  esac
+done
+case "$TIMEOUT" in ''|*[!0-9]*) die "--timeout must be an integer";; esac
+case "$CERT_WARN_DAYS" in ''|*[!0-9]*) die "--cert-days must be an integer";; esac
+
+command -v curl >/dev/null || die "curl not found."
+
+ROWS=0; FAILS=0; WARNS=0
+NOTES=()
+note() { NOTES+=("$*"); }
+
+# Per-row severity: 0 ok, 1 warn, 2 fail. worse() ratchets upward; settle()
+# converts $row into $verdict_str and tallies. (settle is a plain call, not a
+# $(...) substitution — a subshell would lose the counter increments.)
+row=0
+verdict_str=""
+worse() { [ "$1" -gt "$row" ] && row="$1"; return 0; }
+settle() {
+  ROWS=$(( ROWS + 1 ))
+  case "$row" in
+    0) verdict_str="${c_green}ok${c_off}";;
+    1) verdict_str="${c_yellow}WARN${c_off}"; WARNS=$(( WARNS + 1 ));;
+    *) verdict_str="${c_red}FAIL${c_off}";   FAILS=$(( FAILS + 1 ));;
+  esac
+}
+flush_notes() {
+  for n in ${NOTES[@]+"${NOTES[@]}"}; do printf '    %s\n' "$n"; done
+  NOTES=()
+  echo
+}
+
+# =====================================================================
+# 1. systemd units
+# =====================================================================
+if command -v systemctl >/dev/null; then
+  log "systemd units"
+  units=(nginx.service cron.service pm2-root.service certbot.timer)
+  # site-named services: /var/www/<name> with a matching <name>.service
+  for d in "$WWW_DIR"/*/; do
+    [ -d "$d" ] || continue
+    u="$(basename "$d").service"
+    case " ${units[*]} " in *" $u "*) continue;; esac
+    if systemctl list-unit-files --no-legend "$u" 2>/dev/null | grep -q .; then
+      units+=("$u")
+    fi
+  done
+  # anything currently failed that we didn't already pick up
+  while IFS= read -r u; do
+    [ -n "$u" ] || continue
+    case " ${units[*]} " in *" $u "*) continue;; esac
+    units+=("$u")
+  done < <(systemctl list-units --state=failed --no-legend --plain 2>/dev/null | awk '{print $1}')
+
+  printf '%-36s %-10s %-10s %s\n' "unit" "active" "enabled" "verdict"
+  for u in "${units[@]}"; do
+    row=0
+    if ! systemctl list-unit-files --no-legend "$u" 2>/dev/null | grep -q . \
+       && ! systemctl cat "$u" >/dev/null 2>&1; then
+      # pm2-root missing is the classic "pm2 save without the boot hook" trap
+      worse 2
+      [ "$u" = "pm2-root.service" ] \
+        && note "pm2-root.service missing — pm2 apps will NOT survive a reboot. Install the hook: pm2 startup systemd -u root --hp /root (then run the printed line)." \
+        || note "$u: unit not found"
+      settle
+      printf '%-36s %-10s %-10s %s\n' "$u" "missing" "-" "$verdict_str"
+      continue
+    fi
+    active="$(systemctl is-active "$u" 2>/dev/null || true)"
+    enabled="$(systemctl is-enabled "$u" 2>/dev/null || true)"
+    [ "$active" = "active" ] || worse 2
+    [ "$active" = "failed" ] && note "$u: FAILED — journalctl -u $u -n 50"
+    # active but not enabled = works now, dies at reboot
+    case "$enabled" in
+      enabled|static|alias|indirect|generated) ;;
+      *) worse 1; note "$u: not enabled — won't start at boot (systemctl enable $u)";;
+    esac
+    settle
+    printf '%-36s %-10s %-10s %s\n' "$u" "${active:-?}" "${enabled:-?}" "$verdict_str"
+  done
+  flush_notes
+else
+  warn "systemctl not found — skipping systemd checks."
+fi
+
+# =====================================================================
+# 2. pm2 processes
+# =====================================================================
+if command -v pm2 >/dev/null && command -v node >/dev/null; then
+  log "pm2 processes"
+  pm2_rows="$(pm2 jlist 2>/dev/null | node -e '
+    let s = "";
+    process.stdin.on("data", d => s += d).on("end", () => {
+      let list;
+      try { list = JSON.parse(s); } catch { process.exit(0); }
+      const now = Date.now();
+      for (const p of list) {
+        const e = p.pm2_env || {};
+        const up = e.status === "online" && e.pm_uptime
+          ? Math.floor((now - e.pm_uptime) / 1000) : 0;
+        const mem = p.monit ? Math.round(p.monit.memory / 1048576) : 0;
+        console.log([p.name, e.status || "?", e.exec_mode || "?",
+                     e.restart_time ?? 0, up, mem].join("\t"));
+      }
+    });' || true)"
+  if [ -z "$pm2_rows" ]; then
+    row=1; note "pm2 daemon running but zero processes registered (or jlist unparseable)"
+    settle
+    printf '%-24s %s\n' "(none)" "$verdict_str"
+    flush_notes
+  else
+    printf '%-24s %-10s %-14s %-9s %-10s %-8s %s\n' \
+      "name" "status" "mode" "restarts" "uptime" "mem" "verdict"
+    while IFS=$'\t' read -r name status mode restarts up mem; do
+      [ -n "$name" ] || continue
+      row=0
+      [ "$status" = "online" ] || { worse 2; note "$name: status=$status — pm2 logs $name --err"; }
+      # every site here runs fork; cluster mode is the silent-crash trap
+      if [ "$status" = "online" ] && [ "$mode" != "fork_mode" ] && [ "$mode" != "fork" ]; then
+        worse 1; note "$name: exec_mode=$mode — convention is fork (pm2 delete + pm2 start to switch)"
+      fi
+      if [ "$restarts" -gt "$RESTART_WARN" ] 2>/dev/null; then
+        worse 1; note "$name: $restarts restarts — check for crash looping (~/.pm2/pm2.log if its own logs are empty)"
+      fi
+      if [ "$up" -ge 86400 ]; then up_h="$(( up / 86400 ))d$(( up % 86400 / 3600 ))h"
+      elif [ "$up" -ge 3600 ]; then up_h="$(( up / 3600 ))h$(( up % 3600 / 60 ))m"
+      elif [ "$up" -gt 0 ];    then up_h="$(( up / 60 ))m"
+      else up_h="-"; fi
+      settle
+      printf '%-24s %-10s %-14s %-9s %-10s %-8s %s\n' \
+        "$name" "$status" "$mode" "$restarts" "$up_h" "${mem}M" "$verdict_str"
+    done <<< "$pm2_rows"
+    flush_notes
+  fi
+else
+  warn "pm2 (or node) not found — skipping pm2 checks."
+fi
+
+# =====================================================================
+# 3. sites, from enabled nginx vhosts
+# =====================================================================
+if [ -d "$ENABLED_DIR" ]; then
+  log "sites (nginx vhosts in $ENABLED_DIR)"
+  files=()
+  for link in "$ENABLED_DIR"/*; do
+    [ -e "$link" ] || continue
+    real="$(readlink -f "$link")"
+    dup=0
+    for f in ${files[@]+"${files[@]}"}; do [ "$f" = "$real" ] && { dup=1; break; }; done
+    [ "$dup" -eq 0 ] && files+=("$real")
+  done
+
+  printf '%-32s %-16s %-18s %-14s %-9s %s\n' \
+    "site" "dns" "upstream" "public" "cert" "verdict"
+  for f in ${files[@]+"${files[@]}"}; do
+    # first real name after the first server_name directive ("_" catchall
+    # skipped); tolerates the directive not starting its own line
+    fqdn="$(awk '{
+              for (i = 1; i < NF; i++) if ($i == "server_name") {
+                for (j = i + 1; j <= NF; j++) {
+                  n = $j; last = (n ~ /;/); sub(/;.*/, "", n);
+                  if (n != "" && n != "_") { print n; exit }
+                  if (last) next
+                }
+              }
+            }' "$f")"
+    [ -n "$fqdn" ] || { warn "$(basename "$f"): no usable server_name — skipped"; continue; }
+    if [ -n "$FILTER" ] && [[ "$fqdn" != *"$FILTER"* ]]; then continue; fi
+    row=0
+
+    # ---- dns: A record should point at this droplet ----
+    if [ "$LOCAL_ONLY" -eq 1 ]; then
+      dns="-"
+    else
+      ips="$(getent ahostsv4 "$fqdn" 2>/dev/null | awk '{print $1}' | sort -u || true)"
+      if [ -z "$ips" ]; then
+        dns="NXDOMAIN"; worse 2; note "$fqdn: does not resolve"
+      elif printf '%s\n' "$ips" | grep -qxF "$EXPECTED_IP"; then
+        dns="ok"
+      else
+        dns="$(printf '%s' "$ips" | head -1)"; worse 2
+        note "$fqdn: resolves to $dns, expected $EXPECTED_IP"
+      fi
+    fi
+
+    # ---- upstream: every proxy_pass port should answer locally ----
+    ports="$(grep -hoE 'proxy_pass[[:space:]]+[^;]+' "$f" 2>/dev/null \
+             | sed -nE 's/.*:([0-9]+).*/\1/p' | sort -un || true)"
+    if [ -z "$ports" ]; then
+      upstream="static"
+    else
+      upstream=""
+      for port in $ports; do
+        code="$(curl -so /dev/null -w '%{http_code}' --max-time "$TIMEOUT" \
+                "http://127.0.0.1:$port/" 2>/dev/null || true)"
+        [ -n "$upstream" ] && upstream="$upstream,"
+        upstream="$upstream$port:${code:-000}"
+        case "$code" in
+          000|'') worse 2; note "$fqdn: nothing answering on 127.0.0.1:$port (app down? pm2 status)";;
+          5??)    worse 1; note "$fqdn: upstream :$port returned $code";;
+        esac
+      done
+    fi
+
+    # ---- cert: path from the vhost, days left from the leaf ----
+    certfile="$(sed -nE 's/^[[:space:]]*ssl_certificate[[:space:]]+([^;]+);.*/\1/p' "$f" | head -1)"
+    if [ -z "$certfile" ]; then
+      cert="no-tls"; worse 1; note "$fqdn: no ssl_certificate — pre-certbot stub? (certbot --nginx -d $fqdn --redirect)"
+    elif [ ! -r "$certfile" ]; then
+      cert="?"; note "$fqdn: cannot read $certfile (run as root for cert checks)"
+    else
+      end="$(openssl x509 -enddate -noout -in "$certfile" 2>/dev/null | cut -d= -f2 || true)"
+      end_epoch="$(date -d "$end" +%s 2>/dev/null || true)"
+      if [ -z "$end_epoch" ]; then
+        cert="?"; worse 1; note "$fqdn: could not parse expiry from $certfile"
+      else
+        days=$(( (end_epoch - $(date +%s)) / 86400 ))
+        cert="${days}d"
+        if [ "$days" -lt 0 ]; then
+          worse 2; note "$fqdn: cert EXPIRED $(( -days ))d ago — renew-certs --force"
+        elif [ "$days" -lt "$CERT_WARN_DAYS" ]; then
+          worse 1; note "$fqdn: cert expires in ${days}d — renew-certs will catch it, or renew now"
+        fi
+      fi
+    fi
+
+    # ---- public: the check that matters — what a visitor gets ----
+    if [ "$LOCAL_ONLY" -eq 1 ]; then
+      public="-"
+    else
+      scheme="https"; [ -z "$certfile" ] && scheme="http"
+      out="$(curl -so /dev/null -w '%{http_code} %{time_total}' --max-time "$TIMEOUT" \
+             "$scheme://$fqdn/" 2>/dev/null || true)"
+      code="${out%% *}"; t="${out##* }"
+      case "$code" in
+        2??|3??) public="$code $(printf '%.2fs' "$t")";;
+        000|'')  public="unreachable"; worse 2; note "$fqdn: $scheme://$fqdn/ unreachable (TLS failure or nothing serving)";;
+        5??)     public="$code"; worse 2; note "$fqdn: $scheme://$fqdn/ returned $code";;
+        *)       public="$code"; worse 1; note "$fqdn: $scheme://$fqdn/ returned $code";;
+      esac
+    fi
+
+    settle
+    printf '%-32s %-16s %-18s %-14s %-9s %s\n' \
+      "$fqdn" "$dns" "$upstream" "$public" "$cert" "$verdict_str"
+  done
+  flush_notes
+else
+  warn "$ENABLED_DIR not found — skipping site checks."
+fi
+
+# =====================================================================
+# summary
+# =====================================================================
+if [ "$FAILS" -gt 0 ]; then
+  log "summary: $ROWS row(s) — ${c_red}$FAILS FAIL${c_off}, $WARNS warn"
+  exit 1
+fi
+log "summary: $ROWS row(s) — 0 fail, $WARNS warn. All healthy."
