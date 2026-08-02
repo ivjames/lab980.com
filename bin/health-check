@@ -112,14 +112,19 @@ flush_notes() {
 if command -v systemctl >/dev/null; then
   log "systemd units"
   units=(nginx.service cron.service pm2-root.service certbot.timer)
-  # site-named services: /var/www/<name> with a matching <name>.service
+  # site-named services: /var/www/<name> with a matching <name>.service.
+  # Unit names are case-sensitive but dir names drift (/var/www/MBW runs
+  # mbw.service), so try the exact name and the lowercased one.
   for d in "$WWW_DIR"/*/; do
     [ -d "$d" ] || continue
-    u="$(basename "$d").service"
-    case " ${units[*]} " in *" $u "*) continue;; esac
-    if systemctl list-unit-files --no-legend "$u" 2>/dev/null | grep -q .; then
-      units+=("$u")
-    fi
+    name="$(basename "$d")"
+    lower="$(printf '%s' "$name" | tr '[:upper:]' '[:lower:]')"
+    for u in "$name.service" "$lower.service"; do
+      case " ${units[*]} " in *" $u "*) continue;; esac
+      if systemctl list-unit-files --no-legend "$u" 2>/dev/null | grep -q .; then
+        units+=("$u"); break
+      fi
+    done
   done
   # anything currently failed that we didn't already pick up
   while IFS= read -r u; do
