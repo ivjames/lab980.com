@@ -120,6 +120,9 @@ if [ "$with_http2" -gt 0 ] && [ "$without_http2" -gt 0 ]; then
   warn "INCONSISTENT — this is what makes nginx warn 'protocol options redefined'."
 elif [ "$with_http2" -gt 0 ] || [ "$without_http2" -eq 0 ]; then
   log "consistent — nginx should not be warning about :443 protocol options."
+elif [ "$directive_on" -gt 0 ]; then
+  log "no listen-line flags (nginx won't warn); http2 enabled via 'http2 on;'."
+  log "Run --fix to make sure every :443 ssl server block carries the directive."
 else
   log "no vhost carries http2 — consistent (http2 simply off everywhere)."
 fi

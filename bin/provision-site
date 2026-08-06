@@ -256,6 +256,21 @@ if [ "$DO_TLS" -eq 1 ]; then
     if [ "$ok" -eq 1 ]; then
       log "TLS: issuing cert for ${cert_args[*]//-d /}"
       certbot --nginx "${cert_args[@]}" --redirect -n
+
+      # certbot just wrote this vhost's :443 listen lines in whatever style
+      # the installed certbot favors; when that disagrees with the existing
+      # vhosts, nginx warns "protocol options redefined" on every reload
+      # from here on. Normalize now so provisioning never reintroduces the
+      # drift (idempotent; no-op when everyone already agrees).
+      fixer="$(dirname "$(readlink -f "$0")")/fix-nginx-http2"
+      [ -x "$fixer" ] || fixer="$(command -v fix-nginx-http2 || true)"
+      if [ -n "$fixer" ]; then
+        log "TLS: normalizing :443 protocol options across vhosts"
+        "$fixer" --fix \
+          || warn "fix-nginx-http2 --fix failed; run it manually to silence 'protocol options redefined'."
+      else
+        warn "fix-nginx-http2 not found; if nginx warns 'protocol options redefined', run fix-nginx-http2 --fix."
+      fi
     else
       warn "$FQDN not resolving to $IP yet (DNS still propagating)."
       warn "Re-run TLS later:  certbot --nginx ${cert_args[*]} --redirect -n"

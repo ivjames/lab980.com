@@ -117,8 +117,14 @@ It picks the right form for the installed nginx (>= 1.25.1 gets the modern
 per-server `http2 on;` directive; older gets the `http2` listen flag added
 everywhere), backs up every touched file under /var/backups/, and rolls the
 whole change back if nginx -t fails. Idempotent — re-run any time the
-warnings reappear (e.g. after provisioning a new site with a certbot whose
-style differs from the existing vhosts).
+warnings reappear.
+
+`provision-site` runs `fix-nginx-http2 --fix` automatically right after
+certbot issues the new site's cert, so provisioning no longer reintroduces
+the drift (each new cert used to land in whatever listen-line style the
+installed certbot favored, and the warnings came back with every batch of
+new sites). Manual runs are still the fix for vhosts added outside
+provision-site (hand-written confs, certbot run directly).
 
 ## Security response headers
 
